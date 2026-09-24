@@ -33,6 +33,7 @@ from app.services.notification_service import NotificationService
 from app.ui.animation_manager import AnimationManager
 from app.ui.command_palette import CommandPaletteDialog
 from app.ui.dashboard import DashboardView
+from app.ui.design import ThemeManager
 from app.ui.device_panel import DevicePanelView
 from app.ui.execution_dialog import ExecutionDialog
 from app.ui.logs_panel import LogsPanelView
@@ -54,6 +55,13 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Windows 11 Automation Hub")
         self.resize(1100, 720)
         self.setMinimumSize(900, 600)
+
+        # Set Window Icon
+        icon_path = self.app_dir / "assets" / "app_icon.png"
+        if not icon_path.exists():
+            icon_path = self.app_dir / "assets" / "app_icon.ico"
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
 
         # 1. Initialize Stores & Databases
         user_appdata = Path(os.environ.get("APPDATA", ".")) / "AutomationHub"
@@ -140,10 +148,8 @@ class MainWindow(QMainWindow):
         self.status_timer.start(5000)
 
     def _load_stylesheet(self) -> None:
-        qss_path = self.app_dir / "app" / "ui" / "styles" / "theme.qss"
-        if qss_path.exists():
-            with open(qss_path, "r", encoding="utf-8") as f:
-                self.setStyleSheet(f.read())
+        theme_mode = "dark" if self.settings_store.settings.dark_mode else "light"
+        ThemeManager.get_instance().set_theme(theme_mode)
 
     def _init_system_tray(self) -> None:
         self.tray_icon = QSystemTrayIcon(self)
@@ -241,36 +247,24 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Engine Busy", "Another Mode is currently executing!")
             return
 
-        # Trigger Floating HUD Overlay Window
+        # Trigger Signature Floating HUD Overlay Window
         overlay = get_overlay_window()
         overlay.start_mode(mode.id, mode.name, mode.icon)
 
-        # Show Live Execution Modal Dialog
-        dialog = ExecutionDialog(mode.name, parent=self)
         worker = self.engine.execute_mode(mode)
 
-        # Connect Overlay & Dialog signals
-        worker.signals.action_started.connect(dialog.on_action_started)
+        # Connect Overlay & Toast notification signals
         worker.signals.action_started.connect(overlay.update_action)
-
-        worker.signals.action_completed.connect(dialog.on_action_completed)
-
-        worker.signals.mode_progress.connect(dialog.on_progress)
         worker.signals.mode_progress.connect(overlay.update_progress)
-
-        worker.signals.mode_completed.connect(dialog.on_completed)
         worker.signals.mode_completed.connect(overlay.complete_mode)
         worker.signals.mode_completed.connect(
             lambda m_id, m_name, dur: ToastManager.show_toast(self, f"✓ {m_name} ready ({dur:.2f}s)", level="success")
         )
-
-        worker.signals.mode_failed.connect(dialog.on_failed)
         worker.signals.mode_failed.connect(overlay.fail_mode)
+        worker.signals.mode_failed.connect(
+            lambda m_id, m_name, err: ToastManager.show_toast(self, f"✕ {m_name} issue: {err}", level="error")
+        )
 
-        worker.signals.mode_cancelled.connect(dialog.on_cancelled)
-
-        dialog.cancel_requested.connect(self.engine.cancel_current_mode)
-        dialog.exec()
 
     def edit_mode(self, mode_id: str) -> None:
         try:
@@ -379,6 +373,8 @@ class MainWindow(QMainWindow):
     def _on_settings_saved(self, new_settings: AppSettings) -> None:
         self.settings_store.save(new_settings)
         AnimationManager.set_reduce_motion(new_settings.reduce_motion)
+        theme_mode = "dark" if new_settings.dark_mode else "light"
+        ThemeManager.get_instance().set_theme(theme_mode)
         ToastManager.show_toast(self, "✓ Settings saved successfully", level="success")
 
     def _on_hotkey_triggered(self, mode_id: str) -> None:
@@ -397,19 +393,28 @@ class MainWindow(QMainWindow):
         if current_widget:
             AnimationManager.fade_in(current_widget, duration=AnimationDuration.FAST)
 
-        if index == 2:
+        if index == 1:
+            if not self.mode_editor_view.current_mode_id:
+                modes = self.mode_manager.get_all_modes()
+                if modes:
+                    self.mode_editor_view.load_mode(modes[0])
+        elif index == 2:
             self.device_panel_view.refresh_devices()
         elif index == 3:
             self.logs_panel_view.refresh_logs()
+
 
     def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
             self.show_window()
 
     def show_window(self) -> None:
+        if self.isMinimized():
+            self.showNormal()
         self.show()
-        self.activateWindow()
         self.raise_()
+        self.activateWindow()
+
 
     def closeEvent(self, event) -> None:
         if self.settings_store.settings.minimize_to_tray:

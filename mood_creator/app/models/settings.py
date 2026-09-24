@@ -6,8 +6,9 @@ class AppSettings(BaseModel):
     """Application-wide user settings."""
 
     start_with_windows: bool = Field(False, description="Launch Automation Hub on Windows boot")
-    minimize_to_tray: bool = Field(True, description="Minimize window to system tray when closed")
+    minimize_to_tray: bool = Field(False, description="Minimize window to system tray when closed")
     launch_minimized: bool = Field(False, description="Start application hidden in system tray")
+
     notifications_enabled: bool = Field(True, description="Show Windows OS desktop notifications")
     dark_mode: bool = Field(True, description="Use dark theme aesthetic")
     reduce_motion: bool = Field(False, description="Reduce motion animations for accessibility")

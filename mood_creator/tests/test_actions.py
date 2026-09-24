@@ -35,3 +35,25 @@ def test_env_var_condition_action():
     res = act.execute(ctx)
     assert res.success is True
     assert res.data["condition_met"] is True
+
+
+def test_process_manager_shortcut_resolution():
+    from app.windows.processes import ProcessManager
+    # Test resolving existing shortcut if available
+    dedicated_lnk = "DEDICATED_MODES/Game_mode/Steam.lnk"
+    if os.path.exists(dedicated_lnk):
+        target = ProcessManager.resolve_shortcut(dedicated_lnk)
+        assert target is not None
+        assert "Steam.exe" in target or os.path.exists(target)
+
+
+def test_auto_discover_app_path():
+    from app.windows.processes import ProcessManager
+    # Test that auto_discover_app_path runs without NameError or unhandled exception
+    res_steam = ProcessManager.auto_discover_app_path("steam")
+    res_discord = ProcessManager.auto_discover_app_path("discord")
+    res_code = ProcessManager.auto_discover_app_path("code")
+    # At least one should be found on the dev machine
+    assert res_steam is not None or res_discord is not None or res_code is not None
+
+

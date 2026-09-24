@@ -2,11 +2,13 @@ import glob
 import logging
 import os
 import subprocess
+import sys
 import time
 import winreg
 from pathlib import Path
 from typing import Dict, List, Optional
 import psutil
+
 
 logger = logging.getLogger(__name__)
 
@@ -45,22 +47,72 @@ class ProcessManager:
         return None
 
     @staticmethod
+    def resolve_shortcut(shortcut_path: str) -> Optional[str]:
+        """Resolve a Windows .lnk shortcut to its target executable path with stale target healing."""
+        try:
+            import win32com.client
+            shell = win32com.client.Dispatch("WScript.Shell")
+            shortcut = shell.CreateShortcut(os.path.expandvars(shortcut_path))
+            target = shortcut.TargetPath
+            if target and os.path.exists(target):
+                return target
+            # If target does not exist (e.g. app auto-updated), auto-discover
+            base_name = Path(shortcut_path).stem.lower()
+            discovered = ProcessManager.auto_discover_app_path(base_name)
+            if discovered and os.path.exists(discovered):
+                logger.info(f"Healed stale shortcut target '{target}' -> '{discovered}'")
+                try:
+                    shortcut.TargetPath = discovered
+                    shortcut.WorkingDirectory = os.path.dirname(discovered)
+                    shortcut.Save()
+                except Exception:
+                    pass
+                return discovered
+        except Exception as e:
+            logger.debug(f"Failed to resolve shortcut '{shortcut_path}': {e}")
+        return None
+
+
+    @staticmethod
     def launch_process(
         executable_path: str,
         arguments: Optional[List[str]] = None,
         working_dir: Optional[str] = None,
-    ) -> subprocess.Popen:
-        """Launch an application executable."""
+    ) -> Optional[subprocess.Popen]:
+        """Launch an application executable or shortcut."""
         exec_path = os.path.expandvars(executable_path)
+
+        # Check for URI protocol scheme (e.g. steam://, discord://, spotify:)
+        if "://" in exec_path or (":" in exec_path and "\\" not in exec_path and not os.path.exists(exec_path)):
+            logger.info(f"Opening URI protocol via os.startfile: {exec_path}")
+            os.startfile(exec_path)
+            return None
+
         if not os.path.exists(exec_path):
             raise FileNotFoundError(f"Executable path not found: {exec_path}")
+
+        # If it's a .lnk shortcut, resolve the real executable target
+        if exec_path.lower().endswith(".lnk"):
+            target = ProcessManager.resolve_shortcut(exec_path)
+            if target:
+                logger.info(f"Resolved shortcut '{exec_path}' to target: {target}")
+                exec_path = target
+            else:
+                logger.info(f"Launching shortcut directly via os.startfile: {exec_path}")
+                os.startfile(exec_path)
+                return None
 
         cmd = [exec_path] + (arguments or [])
         cwd = working_dir or os.path.dirname(exec_path)
 
         logger.info(f"Launching process: {cmd} (cwd={cwd})")
-        process = subprocess.Popen(cmd, cwd=cwd, shell=False)
-        return process
+        try:
+            process = subprocess.Popen(cmd, cwd=cwd, shell=False)
+            return process
+        except OSError as e:
+            logger.warning(f"Popen failed for '{exec_path}' ({e}), falling back to os.startfile")
+            os.startfile(exec_path)
+            return None
 
     @staticmethod
     def terminate_process(process_name: str, force: bool = False) -> bool:
@@ -102,16 +154,30 @@ class ProcessManager:
         program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
         program_files_x86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
 
-        # Step 0: Check DEDICATED_MODES directory in workspace
-        root_dir = Path(__file__).resolve().parent.parent.parent
-        dedicated_dir = root_dir / "DEDICATED_MODES"
-        if dedicated_dir.exists():
-            for root_path, _, files in os.walk(dedicated_dir):
-                for f in files:
-                    if key in f.lower():
-                        full_f = os.path.join(root_path, f)
-                        logger.info(f"Discovered '{app_key}' in DEDICATED_MODES: {full_f}")
-                        return full_f
+        # Step 0: Check DEDICATED_MODES directory in workspace, dist/parent, and frozen unpack dir
+        possible_dirs = [
+            Path(__file__).resolve().parent.parent.parent / "DEDICATED_MODES",
+            Path(sys.executable).parent / "DEDICATED_MODES",
+            Path(sys.executable).parent.parent / "DEDICATED_MODES",
+            Path.cwd() / "DEDICATED_MODES",
+        ]
+        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+            possible_dirs.append(Path(sys._MEIPASS) / "DEDICATED_MODES")
+
+        for d in possible_dirs:
+            if d.exists():
+                for root_path, _, files in os.walk(d):
+                    for f in files:
+                        if key in f.lower():
+                            full_f = os.path.join(root_path, f)
+                            logger.info(f"Discovered '{app_key}' in DEDICATED_MODES: {full_f}")
+                            if full_f.lower().endswith(".lnk"):
+                                target = ProcessManager.resolve_shortcut(full_f)
+                                if target:
+                                    logger.info(f"Resolved DEDICATED_MODES shortcut to: {target}")
+                                    return target
+                            return full_f
+
 
         candidate_paths = []
 

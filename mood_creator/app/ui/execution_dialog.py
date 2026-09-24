@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -11,32 +11,64 @@ from PySide6.QtWidgets import (
 )
 
 from app.models.action_result import ActionResult
+from app.ui.design.tokens import DarkPalette, Radius, Spacing
 
 
 class ExecutionDialog(QDialog):
-    """Live modal dialog displaying active mode automation progress."""
+    """Refined AMOLED execution modal displaying real-time automation progress."""
 
     cancel_requested = Signal()
 
     def __init__(self, mode_name: str, parent=None):
         super().__init__(parent)
-        self.setWindowTitle(f"Executing {mode_name}")
-        self.setMinimumWidth(500)
-        self.setMinimumHeight(400)
+        self.setWindowTitle(f"Running {mode_name}")
+        self.setMinimumWidth(520)
+        self.setMinimumHeight(420)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
+        self.setStyleSheet(
+            f"""
+            QDialog {{
+                background-color: {DarkPalette.BG_PRIMARY};
+                border: 1px solid {DarkPalette.BORDER_SUBTLE};
+                border-radius: {Radius.LG}px;
+            }}
+            QLabel {{
+                color: {DarkPalette.TEXT_PRIMARY};
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            }}
+            QProgressBar {{
+                background-color: {DarkPalette.SURFACE_PRIMARY};
+                border: 1px solid {DarkPalette.BORDER_SUBTLE};
+                border-radius: 6px;
+                height: 8px;
+                text-align: center;
+                color: transparent;
+            }}
+            QProgressBar::chunk {{
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #38bdf8, stop:1 #818cf8);
+                border-radius: 5px;
+            }}
+            QScrollArea {{
+                border: 1px solid {DarkPalette.BORDER_SUBTLE};
+                border-radius: 10px;
+                background-color: {DarkPalette.SURFACE_PRIMARY};
+            }}
+            """
+        )
+
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(22, 22, 22, 22)
-        main_layout.setSpacing(16)
+        main_layout.setContentsMargins(Spacing.XL, Spacing.XL, Spacing.XL, Spacing.XL)
+        main_layout.setSpacing(Spacing.MD)
 
         # Header Title
         self.title_lbl = QLabel(f"Executing {mode_name}...")
-        self.title_lbl.setStyleSheet("font-size: 20px; font-weight: 800; color: #f8fafc;")
+        self.title_lbl.setStyleSheet(f"font-size: 20px; font-weight: 800; color: {DarkPalette.TEXT_PRIMARY}; letter-spacing: -0.3px;")
         main_layout.addWidget(self.title_lbl)
 
         # Status Subtitle
         self.status_lbl = QLabel("Initializing engine context...")
-        self.status_lbl.setStyleSheet("color: #94a3b8; font-size: 13px;")
+        self.status_lbl.setStyleSheet(f"color: {DarkPalette.TEXT_MUTED}; font-size: 13px;")
         main_layout.addWidget(self.status_lbl)
 
         # Progress Bar
@@ -48,11 +80,11 @@ class ExecutionDialog(QDialog):
         # Action Steps List Scroll Area
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
-        self.scroll.setStyleSheet("QScrollArea { border: 1px solid #1f2937; border-radius: 10px; background-color: #111827; }")
 
         self.steps_container = QWidget()
+        self.steps_container.setStyleSheet("background: transparent;")
         self.steps_layout = QVBoxLayout(self.steps_container)
-        self.steps_layout.setContentsMargins(14, 14, 14, 14)
+        self.steps_layout.setContentsMargins(12, 12, 12, 12)
         self.steps_layout.setSpacing(8)
         self.scroll.setWidget(self.steps_container)
 
@@ -78,11 +110,21 @@ class ExecutionDialog(QDialog):
 
     def on_action_started(self, step_idx: int, total_steps: int, action_name: str) -> None:
         lbl = QLabel(f"⏳  Step {step_idx}/{total_steps}: {action_name}")
-        lbl.setStyleSheet("font-size: 13px; color: #38bdf8; font-weight: 600; padding: 4px; background: #1e293b; border-radius: 6px;")
+        lbl.setStyleSheet(
+            f"""
+            QLabel {{
+                font-size: 13px;
+                color: #38bdf8;
+                font-weight: 600;
+                padding: 8px 12px;
+                background-color: rgba(56, 189, 248, 0.08);
+                border: 1px solid rgba(56, 189, 248, 0.2);
+                border-radius: 6px;
+            }}
+            """
+        )
         self.steps_layout.addWidget(lbl)
         self.status_lbl.setText(f"Executing step {step_idx}/{total_steps}: {action_name}")
-        
-        # Auto-scroll to bottom
         self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum())
 
     def on_action_completed(self, step_idx: int, total_steps: int, action_name: str, result: ActionResult) -> None:
@@ -94,12 +136,35 @@ class ExecutionDialog(QDialog):
                 if isinstance(w, QLabel):
                     if result.success:
                         w.setText(f"✓  Step {step_idx}/{total_steps}: {action_name}  <span style='color: #64748b;'>({result.duration:.2f}s)</span>")
-                        w.setStyleSheet("font-size: 13px; color: #10b981; font-weight: 600; padding: 4px; background: #064e3b; border-radius: 6px;")
+                        w.setStyleSheet(
+                            """
+                            QLabel {
+                                font-size: 13px;
+                                color: #10b981;
+                                font-weight: 600;
+                                padding: 8px 12px;
+                                background-color: rgba(16, 185, 129, 0.08);
+                                border: 1px solid rgba(16, 185, 129, 0.2);
+                                border-radius: 6px;
+                            }
+                            """
+                        )
                     else:
                         w.setText(f"✗  Step {step_idx}/{total_steps}: {action_name} — {result.error or result.message}")
-                        w.setStyleSheet("font-size: 13px; color: #ef4444; font-weight: 600; padding: 4px; background: #7f1d1d; border-radius: 6px;")
+                        w.setStyleSheet(
+                            """
+                            QLabel {
+                                font-size: 13px;
+                                color: #ef4444;
+                                font-weight: 600;
+                                padding: 8px 12px;
+                                background-color: rgba(239, 68, 68, 0.08);
+                                border: 1px solid rgba(239, 68, 68, 0.2);
+                                border-radius: 6px;
+                            }
+                            """
+                        )
 
-        # Auto-scroll
         self.scroll.verticalScrollBar().setValue(self.scroll.verticalScrollBar().maximum())
 
     def on_progress(self, percent: float, status_msg: str) -> None:
@@ -117,16 +182,20 @@ class ExecutionDialog(QDialog):
 
         if has_errors:
             self.title_lbl.setText(f"⚡ {mode_name} Finished with Warnings")
-            self.title_lbl.setStyleSheet("font-size: 20px; font-weight: 800; color: #f59e0b;")
-            self.status_lbl.setText(f"Automation steps finished in {duration:.2f}s (some steps encountered issues).")
+            self.title_lbl.setStyleSheet(f"font-size: 20px; font-weight: 800; color: #f59e0b;")
+            self.status_lbl.setText(f"Finished in {duration:.2f}s (some actions reported warnings).")
         else:
             self.title_lbl.setText(f"⚡ {mode_name} Ready!")
-            self.title_lbl.setStyleSheet("font-size: 20px; font-weight: 800; color: #10b981;")
-            self.status_lbl.setText(f"Completed all automation steps in {duration:.2f} seconds.")
+            self.title_lbl.setStyleSheet(f"font-size: 20px; font-weight: 800; color: #10b981;")
+            self.status_lbl.setText(f"Completed all steps in {duration:.2f} seconds.")
 
         self.progress_bar.setValue(100)
         self.cancel_btn.setVisible(False)
         self.done_btn.setVisible(True)
+
+        # Auto-dismiss on success after 1.5 seconds if no errors occurred
+        if not has_errors:
+            QTimer.singleShot(1500, self.accept)
 
     def on_failed(self, mode_id: str, mode_name: str, error_msg: str) -> None:
         self.title_lbl.setText("Execution Halted")

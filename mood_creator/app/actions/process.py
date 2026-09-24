@@ -94,13 +94,16 @@ class LaunchProcessAction(BaseAction):
 
         try:
             proc = ProcessManager.launch_process(app_path, arguments, working_dir)
+            pid = proc.pid if proc else None
+            pid_str = f" (PID={pid})" if pid else ""
             return ActionResult(
                 success=True,
-                message=f"Launched '{os.path.basename(app_path)}' (PID={proc.pid})",
-                data={"pid": proc.pid, "path": app_path},
+                message=f"Launched '{os.path.basename(app_path)}'{pid_str}",
+                data={"pid": pid, "path": app_path},
             )
         except Exception as e:
             return ActionResult(success=False, message=f"Failed to launch '{application}'", error=str(e))
+
 
 
 class CloseProcessAction(BaseAction):

@@ -1,24 +1,37 @@
-# ⚡ Windows 11 Automation Hub (Mood Creator) — Beta Version 1.0
+# ⚡ Windows 11 Automation Hub (Mood Creator) — Beta Version 2.0
 
-[![Version](https://img.shields.io/badge/version-1.0--beta-blue.svg)](https://github.com/Sswastik60/uselessAutomations)
+[![Version](https://img.shields.io/badge/version-2.0--beta-blueviolet.svg)](https://github.com/Sswastik60/uselessAutomations)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%2011-0078d4.svg)](https://microsoft.com/windows)
 
-A production-quality **personal Windows 11 automation hub** inspired by the simplicity of Steam Deck shortcuts.
+A world-class, premium **personal Windows 11 automation hub and mode controller** inspired by the speed, polish, and minimalism of Linear, Raycast, and Steam Deck.
 
 The core idea:
 
-> **Press one button or hotkey system-wide, and your entire computer reconfigures into your desired "Mode".**
+> **Press one button or global hotkey system-wide, and your entire workstation transforms into your desired "Mode" instantly with non-blocking feedback.**
 
 ---
 
-## 🌟 Key Features
+## 🌟 What's New in Beta Version 2.0
+
+* **AMOLED True-Black Theme**: Designed with an ultra-sleek `#000000` / `#040405` / `#09090b` palette, subtle 1px border glows, fluid hover physics, and zero-distraction focus.
+* **Non-Blocking HUD Overlay & Toasts**: Long-running automations and mode transitions no longer lock up your window with modal dialogs. Enjoy an ambient floating HUD overlay and sleek corner toast notifications.
+* **Self-Healing Windows Shortcuts**: Intelligent shortcut resolver automatically detects version changes in auto-updating apps (e.g., Discord `app-1.0.9259`), resolves broken targets, and dynamically heals `.lnk` files on the fly.
+* **Multi-Directory App Picker**: Effortlessly browse and attach executables from `DEDICATED_MODES`, system directories, Start Menu, or custom paths with instant file validation.
+* **Command Palette (`Ctrl+K` / `⌘K`)**: Instant fuzzy search across all modes, action controls, and application settings.
+* **Graceful Single-Instance IPC**: Clean application termination on window close with local socket communication to prevent orphaned background processes.
+* **Pre-Packaged Standalone Executable**: Native single-file `AutomationHub.exe` built with PyInstaller, custom high-DPI icon assets, and zero external runtime dependencies.
+
+---
+
+## 🚀 Key Features
 
 * **Mode Automation Recipes**: Single-button / single-hotkey trigger for complex computer setups (🎸 Guitar Mode, 🎮 Gaming Mode, 💻 Coding Mode, 🎹 Music Production Mode, 📚 Study Mode).
-* **Polished Windows 11 Dark Mode GUI**: Built natively with PySide6 (Qt 6), featuring rounded cards, status indicators, and live execution views.
+* **Polished PySide6 GUI**: High-performance Qt 6 desktop application with smooth easing curves, micro-interactions, and collapsible sidebar.
 * **Extensible Action System**: Built-in actions for process management, file operations, audio input/output device switching, window control, keyboard & mouse macro simulation, wait/polling timers, conditional branching, and desktop notifications.
 * **Global System Hotkeys**: Non-blocking background Windows API hotkey monitoring (e.g., `CTRL+ALT+G`).
 * **Application Adapters Plugin Architecture**: First-party adapters for **FL Studio**, **Steam**, **Spotify**, and **Discord**.
-* **Background System Tray Integration**: Minimize to tray with quick-run mode submenus and toast notifications.
+* **System Tray & Toast Integration**: Background tray support with quick-run context menus and native status toasts.
 * **JSON Mode Definitions & Schema Versioning**: User-editable, exportable, and importable JSON mode files with pydantic schema validation.
 * **Persistent Activity Logs**: Built-in SQLite database logging every action duration, status, message, and diagnostic error trace.
 * **Windows Autostart Integration**: Built-in Windows Registry autostart toggle (`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`).

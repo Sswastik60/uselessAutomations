@@ -39,7 +39,7 @@ def test_overlay_window(qapp):
     assert overlay.title_lbl.text() == "Gaming Mode"
 
     overlay.update_action(1, 3, "Launch Steam")
-    assert "Step 1/3" in overlay.step_lbl.text()
+    assert "Step 1/3" in overlay.status_sub_lbl.text()
 
     overlay.complete_mode("gaming_mode", "Gaming Mode", 0.5)
     assert overlay.badge_lbl.text() == "READY"

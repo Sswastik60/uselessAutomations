@@ -1,11 +1,11 @@
-"""Signature Hotkey Floating HUD Overlay Window.
+"""Signature Mode Execution Overlay HUD Window.
 
-Provides a sleek, non-intrusive floating HUD widget that appears on system-wide hotkey trigger,
-animates steps through live, shows a green checkmark on completion, and smoothly fades out.
+Provides a polished, non-intrusive floating HUD widget that appears on system-wide hotkey trigger,
+animates action steps through (○ -> ◌ -> ✓), displays '✓ You're ready.', and gracefully fades out.
 """
 
 import logging
-from typing import Optional
+from typing import Dict, List, Optional
 from PySide6.QtCore import QPoint, QPropertyAnimation, QTimer, Qt
 from PySide6.QtGui import QColor, QFont, QGuiApplication
 from PySide6.QtWidgets import (
@@ -18,22 +18,54 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app.models.action_result import ActionResult
 from app.ui.animation_manager import AnimationManager
-from app.ui.styles.design_tokens import AnimationDuration, DarkPalette
+from app.ui.design.tokens import DarkPalette, Duration, Easing
 
 logger = logging.getLogger(__name__)
 
 
+class ExecutionStepWidget(QWidget):
+    """Step indicator row displaying step status transitions (○ -> ◌ -> ✓)."""
+
+    def __init__(self, step_num: int, title: str, parent=None):
+        super().__init__(parent)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 2, 0, 2)
+        layout.setSpacing(8)
+
+        self.status_lbl = QLabel("○")
+        self.status_lbl.setStyleSheet(f"font-size: 13px; color: {DarkPalette.TEXT_MUTED}; background: transparent;")
+        layout.addWidget(self.status_lbl)
+
+        self.title_lbl = QLabel(title)
+        self.title_lbl.setStyleSheet(f"font-size: 12px; color: {DarkPalette.TEXT_SECONDARY}; background: transparent;")
+        layout.addWidget(self.title_lbl, stretch=1)
+
+    def set_running(self) -> None:
+        self.status_lbl.setText("◌")
+        self.status_lbl.setStyleSheet(f"font-size: 13px; color: {DarkPalette.ACCENT_LIGHT}; font-weight: 700; background: transparent;")
+        self.title_lbl.setStyleSheet(f"font-size: 12px; color: {DarkPalette.TEXT_PRIMARY}; font-weight: 600; background: transparent;")
+
+    def set_completed(self) -> None:
+        self.status_lbl.setText("✓")
+        self.status_lbl.setStyleSheet(f"font-size: 13px; color: {DarkPalette.SUCCESS}; font-weight: 800; background: transparent;")
+        self.title_lbl.setStyleSheet(f"font-size: 12px; color: {DarkPalette.TEXT_PRIMARY}; background: transparent;")
+
+    def set_failed(self, error: str) -> None:
+        self.status_lbl.setText("✕")
+        self.status_lbl.setStyleSheet(f"font-size: 13px; color: {DarkPalette.ERROR}; font-weight: 800; background: transparent;")
+        self.title_lbl.setStyleSheet(f"font-size: 12px; color: {DarkPalette.ERROR}; background: transparent;")
+
+
 class FloatingOverlayWindow(QWidget):
-    """Sleek floating HUD overlay window for hotkey / background mode executions."""
+    """Signature HUD Overlay Window appearing on global hotkey trigger or execution."""
 
     _instance: Optional["FloatingOverlayWindow"] = None
 
     def __init__(self):
         super().__init__()
         FloatingOverlayWindow._instance = self
-        
+
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.Tool
@@ -43,35 +75,35 @@ class FloatingOverlayWindow(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
 
-        self.setFixedSize(360, 130)
+        self.setFixedSize(360, 160)
 
-        # Outer Frame container
+        # Card Container
         self.card = QFrame(self)
-        self.card.setGeometry(0, 0, 360, 130)
+        self.card.setGeometry(0, 0, 360, 160)
         self.card.setStyleSheet(
             """
             QFrame {
-                background-color: #050811;
+                background-color: #060913;
                 border: 1px solid #1e293b;
-                border-radius: 14px;
+                border-radius: 16px;
             }
             """
         )
 
-        # Drop shadow effect
+        # Drop shadow
         shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(24)
-        shadow.setColor(QColor(0, 0, 0, 180))
+        shadow.setBlurRadius(28)
+        shadow.setColor(QColor(0, 0, 0, 200))
         shadow.setOffset(0, 8)
         self.card.setGraphicsEffect(shadow)
 
         layout = QVBoxLayout(self.card)
         layout.setContentsMargins(18, 16, 18, 16)
-        layout.setSpacing(10)
+        layout.setSpacing(8)
 
         # Header Row: Icon + Title + Status Badge
         header_layout = QHBoxLayout()
-        header_layout.setSpacing(12)
+        header_layout.setSpacing(10)
 
         self.icon_lbl = QLabel("⚡")
         self.icon_lbl.setStyleSheet("font-size: 24px; background: transparent; border: none;")
@@ -101,12 +133,12 @@ class FloatingOverlayWindow(QWidget):
 
         layout.addLayout(header_layout)
 
-        # Current Step Status Label
-        self.step_lbl = QLabel("Initializing engine context...")
-        self.step_lbl.setStyleSheet(
-            f"font-size: 12px; color: {DarkPalette.TEXT_SECONDARY}; background: transparent; border: none;"
+        # Active Step Description
+        self.status_sub_lbl = QLabel("Preparing setup...")
+        self.status_sub_lbl.setStyleSheet(
+            f"font-size: 12px; font-weight: 600; color: {DarkPalette.TEXT_SECONDARY}; background: transparent; border: none;"
         )
-        layout.addWidget(self.step_lbl)
+        layout.addWidget(self.status_sub_lbl)
 
         # Progress Bar
         self.progress_bar = QProgressBar()
@@ -148,7 +180,7 @@ class FloatingOverlayWindow(QWidget):
         self.dismiss_timer.stop()
         self.icon_lbl.setText(icon or "⚡")
         self.title_lbl.setText(f"{mode_name}")
-        self.step_lbl.setText("Starting automation sequence...")
+        self.status_sub_lbl.setText("Preparing your setup...")
         self.badge_lbl.setText("RUNNING")
         self.badge_lbl.setStyleSheet(
             "background-color: #0284c7; color: #ffffff; font-size: 10px; font-weight: 800; border-radius: 5px; padding: 3px 7px; border: none;"
@@ -156,9 +188,9 @@ class FloatingOverlayWindow(QWidget):
         self.card.setStyleSheet(
             """
             QFrame {
-                background-color: #050811;
+                background-color: #060913;
                 border: 1px solid #0284c7;
-                border-radius: 14px;
+                border-radius: 16px;
             }
             """
         )
@@ -166,26 +198,27 @@ class FloatingOverlayWindow(QWidget):
 
         self.position_top_right()
         self.show()
-        AnimationManager.fade_in(self, duration=AnimationDuration.FAST)
+        AnimationManager.fade_in(self, duration=Duration.PANEL)
 
     def update_action(self, step_idx: int, total_steps: int, action_name: str) -> None:
         """Update active step display."""
         pct = int(((step_idx - 1) / max(1, total_steps)) * 100)
         self.progress_bar.setValue(pct)
-        self.step_lbl.setText(f"Step {step_idx}/{total_steps}: {action_name}")
+        self.status_sub_lbl.setText(f"Step {step_idx}/{total_steps}: {action_name}")
 
     def update_progress(self, percent: float, status_msg: str) -> None:
         """Update progress bar value."""
         self.progress_bar.setValue(int(percent))
         if status_msg:
-            self.step_lbl.setText(status_msg)
+            self.status_sub_lbl.setText(status_msg)
 
     def complete_mode(self, mode_id: str, mode_name: str, duration: float) -> None:
-        """Show completed state with green checkmark and auto-dismiss after 1.5s."""
+        """Show signature completed state: '✓ You're ready.' and auto-dismiss gracefully."""
         self.progress_bar.setValue(100)
         self.icon_lbl.setText("✓")
         self.icon_lbl.setStyleSheet("font-size: 24px; color: #10b981; background: transparent; border: none;")
-        self.step_lbl.setText(f"Completed in {duration:.2f}s")
+        self.title_lbl.setText("You're ready.")
+        self.status_sub_lbl.setText(f"{mode_name} completed in {duration:.2f}s")
         self.badge_lbl.setText("READY")
         self.badge_lbl.setStyleSheet(
             "background-color: #059669; color: #ffffff; font-size: 10px; font-weight: 800; border-radius: 5px; padding: 3px 7px; border: none;"
@@ -195,18 +228,19 @@ class FloatingOverlayWindow(QWidget):
             QFrame {
                 background-color: #021a12;
                 border: 1px solid #10b981;
-                border-radius: 14px;
+                border-radius: 16px;
             }
             """
         )
-        AnimationManager.pulse(self.card, duration=AnimationDuration.NORMAL)
+        AnimationManager.pulse(self.card, duration=Duration.EXECUTION)
         self.dismiss_timer.start(1800)
 
     def fail_mode(self, mode_id: str, mode_name: str, error_msg: str) -> None:
-        """Show error state and auto-dismiss after 3s."""
+        """Show human error state and auto-dismiss after 3.5s."""
         self.icon_lbl.setText("✕")
         self.icon_lbl.setStyleSheet("font-size: 24px; color: #ef4444; background: transparent; border: none;")
-        self.step_lbl.setText(error_msg[:45] + "..." if len(error_msg) > 45 else error_msg)
+        self.title_lbl.setText(f"Couldn't finish {mode_name}")
+        self.status_sub_lbl.setText(error_msg[:45] + "..." if len(error_msg) > 45 else error_msg)
         self.badge_lbl.setText("FAILED")
         self.badge_lbl.setStyleSheet(
             "background-color: #991b1b; color: #ffffff; font-size: 10px; font-weight: 800; border-radius: 5px; padding: 3px 7px; border: none;"
@@ -216,7 +250,7 @@ class FloatingOverlayWindow(QWidget):
             QFrame {
                 background-color: #1a0505;
                 border: 1px solid #ef4444;
-                border-radius: 14px;
+                border-radius: 16px;
             }
             """
         )
@@ -225,7 +259,7 @@ class FloatingOverlayWindow(QWidget):
 
     def hide_overlay(self) -> None:
         """Fade out overlay smoothly."""
-        AnimationManager.fade_out(self, duration=AnimationDuration.NORMAL, hide_on_finish=True)
+        AnimationManager.fade_out(self, duration=Duration.PANEL, hide_on_finish=True)
 
 
 def get_overlay_window() -> FloatingOverlayWindow:

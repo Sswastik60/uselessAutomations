@@ -1,8 +1,10 @@
-import os
 import glob
+import os
+import sys
 import winreg
 from pathlib import Path
 from typing import List, Tuple
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -109,16 +111,26 @@ class AppPickerDialog(QDialog):
         discovered: List[Tuple[str, str, str]] = []  # (Category, Name, Path)
 
         # 1. DEDICATED_MODES shortcuts
-        root_dir = Path(__file__).resolve().parent.parent.parent.parent
-        dedicated_dir = root_dir / "DEDICATED_MODES"
-        if dedicated_dir.exists():
-            for root, _, files in os.walk(dedicated_dir):
-                folder_name = os.path.basename(root)
-                for f in files:
-                    if f.endswith((".lnk", ".exe", ".url")):
-                        name = os.path.splitext(f)[0]
-                        full_path = os.path.join(root, f)
-                        discovered.append((f"DEDICATED_MODES ({folder_name})", name, full_path))
+        candidate_dirs = [
+            Path(__file__).resolve().parent.parent.parent.parent / "DEDICATED_MODES",
+            Path(sys.executable).parent / "DEDICATED_MODES",
+            Path(sys.executable).parent.parent / "DEDICATED_MODES",
+            Path.cwd() / "DEDICATED_MODES",
+        ]
+        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+            candidate_dirs.append(Path(sys._MEIPASS) / "DEDICATED_MODES")
+
+        for dedicated_dir in candidate_dirs:
+            if dedicated_dir.exists():
+                for root, _, files in os.walk(dedicated_dir):
+                    folder_name = os.path.basename(root)
+                    for f in files:
+                        if f.endswith((".lnk", ".exe", ".url")):
+                            name = os.path.splitext(f)[0]
+                            full_path = os.path.join(root, f)
+                            if not any(d[2] == full_path for d in discovered):
+                                discovered.append((f"DEDICATED_MODES ({folder_name})", name, full_path))
+
 
         # 2. Popular Games & Apps
         well_known = [

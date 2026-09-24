@@ -59,6 +59,22 @@ class HotkeySignalHelper(QObject):
     hotkey_pressed = Signal(str)
 
 
+class POINT(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+
+
+class MSG(ctypes.Structure):
+    _fields_ = [
+        ("hwnd", ctypes.c_void_p),
+        ("message", ctypes.c_uint),
+        ("wParam", ctypes.c_size_t),
+        ("lParam", ctypes.c_size_t),
+        ("time", ctypes.c_ulong),
+        ("pt", POINT),
+        ("lPrivate", ctypes.c_ulong),
+    ]
+
+
 class HotkeyThread(QThread):
     """Background Windows message loop thread for listening to system RegisterHotKey events."""
 
@@ -131,15 +147,15 @@ class HotkeyThread(QThread):
         for fid in failed_ids:
             self._hotkeys.pop(fid, None)
 
-        msg = (ctypes.c_ulong * 7)()
+        msg = MSG()
         while self._running:
             b_ret = user32.GetMessageW(ctypes.byref(msg), None, 0, 0)
             if b_ret == 0 or b_ret == -1:
                 break
             
             # WM_HOTKEY message ID = 0x0312
-            if msg[1] == win32con.WM_HOTKEY:
-                hk_id = msg[2]
+            if msg.message == win32con.WM_HOTKEY:
+                hk_id = msg.wParam
                 if hk_id in self._hotkeys:
                     hk_str = self._hotkeys[hk_id][0]
                     logger.debug(f"Global hotkey triggered: '{hk_str}'")
