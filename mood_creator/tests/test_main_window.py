@@ -39,3 +39,16 @@ def test_main_window_init(qapp):
     assert gaming.name == "Gaming Mode"
 
     window.close()
+
+
+def test_main_window_page_navigation(qapp):
+    root_dir = Path(__file__).resolve().parent.parent
+    window = MainWindow(app_dir=root_dir)
+
+    # Test navigating through all pages without crash or NameError
+    for page_idx in range(window.stacked_widget.count()):
+        window._on_page_changed(page_idx)
+        assert window.stacked_widget.currentIndex() == page_idx
+
+    window.close()
+

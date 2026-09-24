@@ -156,22 +156,33 @@ class ModeCard(QFrame):
     def enterEvent(self, event) -> None:
         """Hover elevation animation."""
         super().enterEvent(event)
-        self.shadow.setBlurRadius(24)
-        self.shadow.setColor(QColor(2, 132, 199, 120))
-        self.shadow.setOffset(0, 6)
+        try:
+            if hasattr(self, "shadow") and self.shadow:
+                self.shadow.setBlurRadius(24)
+                self.shadow.setColor(QColor(2, 132, 199, 120))
+                self.shadow.setOffset(0, 6)
+        except Exception:
+            pass
 
     def leaveEvent(self, event) -> None:
         """Return to resting state."""
         super().leaveEvent(event)
-        self.shadow.setBlurRadius(16)
-        self.shadow.setColor(QColor(0, 0, 0, 100))
-        self.shadow.setOffset(0, 4)
+        try:
+            if hasattr(self, "shadow") and self.shadow:
+                self.shadow.setBlurRadius(16)
+                self.shadow.setColor(QColor(0, 0, 0, 100))
+                self.shadow.setOffset(0, 4)
+        except Exception:
+            pass
 
     def mousePressEvent(self, event) -> None:
         """Physical press compression feedback."""
         super().mousePressEvent(event)
         if event.button() == Qt.MouseButton.LeftButton:
-            AnimationManager.pulse(self, duration=Duration.MICRO)
+            try:
+                AnimationManager.pulse(self, duration=Duration.MICRO)
+            except Exception:
+                pass
 
     def _show_context_menu(self) -> None:
         menu = QMenu(self)

@@ -115,3 +115,8 @@ class LightPalette:
     WARNING_BG = "#fef3c7"
     ERROR = "#dc2626"
     ERROR_BG = "#fee2e2"
+
+
+# Aliases for cross-module compatibility
+AnimationDuration = Duration
+

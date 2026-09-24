@@ -40,6 +40,7 @@ from app.ui.logs_panel import LogsPanelView
 from app.ui.mode_editor import ModeEditorView
 from app.ui.overlay import get_overlay_window
 from app.ui.settings import SettingsView
+from app.ui.styles.design_tokens import AnimationDuration
 from app.ui.toast import ToastManager
 from app.ui.widgets.sidebar import SidebarWidget
 
@@ -391,7 +392,11 @@ class MainWindow(QMainWindow):
         self.stacked_widget.setCurrentIndex(index)
         current_widget = self.stacked_widget.currentWidget()
         if current_widget:
-            AnimationManager.fade_in(current_widget, duration=AnimationDuration.FAST)
+            try:
+                anim_dur = getattr(AnimationDuration, "FAST", 120)
+                AnimationManager.fade_in(current_widget, duration=anim_dur)
+            except Exception as e:
+                logger.debug(f"Page transition animation error: {e}")
 
         if index == 1:
             if not self.mode_editor_view.current_mode_id:
