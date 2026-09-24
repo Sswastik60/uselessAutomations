@@ -10,6 +10,7 @@ class AppSettings(BaseModel):
     launch_minimized: bool = Field(False, description="Start application hidden in system tray")
     notifications_enabled: bool = Field(True, description="Show Windows OS desktop notifications")
     dark_mode: bool = Field(True, description="Use dark theme aesthetic")
+    reduce_motion: bool = Field(False, description="Reduce motion animations for accessibility")
     log_level: str = Field("INFO", description="Logging output level (DEBUG, INFO, WARNING, ERROR)")
     
     # Audio defaults

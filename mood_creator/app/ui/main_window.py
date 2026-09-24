@@ -30,12 +30,16 @@ from app.persistence.settings_store import SettingsStore
 from app.services.device_service import DeviceService
 from app.services.hotkey_service import HotkeyService
 from app.services.notification_service import NotificationService
+from app.ui.animation_manager import AnimationManager
+from app.ui.command_palette import CommandPaletteDialog
 from app.ui.dashboard import DashboardView
 from app.ui.device_panel import DevicePanelView
 from app.ui.execution_dialog import ExecutionDialog
 from app.ui.logs_panel import LogsPanelView
 from app.ui.mode_editor import ModeEditorView
+from app.ui.overlay import get_overlay_window
 from app.ui.settings import SettingsView
+from app.ui.toast import ToastManager
 from app.ui.widgets.sidebar import SidebarWidget
 
 logger = logging.getLogger(__name__)
@@ -237,16 +241,32 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Engine Busy", "Another Mode is currently executing!")
             return
 
-        # Show Live Execution Modal
+        # Trigger Floating HUD Overlay Window
+        overlay = get_overlay_window()
+        overlay.start_mode(mode.id, mode.name, mode.icon)
+
+        # Show Live Execution Modal Dialog
         dialog = ExecutionDialog(mode.name, parent=self)
         worker = self.engine.execute_mode(mode)
 
-        # Connect signals
+        # Connect Overlay & Dialog signals
         worker.signals.action_started.connect(dialog.on_action_started)
+        worker.signals.action_started.connect(overlay.update_action)
+
         worker.signals.action_completed.connect(dialog.on_action_completed)
+
         worker.signals.mode_progress.connect(dialog.on_progress)
+        worker.signals.mode_progress.connect(overlay.update_progress)
+
         worker.signals.mode_completed.connect(dialog.on_completed)
+        worker.signals.mode_completed.connect(overlay.complete_mode)
+        worker.signals.mode_completed.connect(
+            lambda m_id, m_name, dur: ToastManager.show_toast(self, f"✓ {m_name} ready ({dur:.2f}s)", level="success")
+        )
+
         worker.signals.mode_failed.connect(dialog.on_failed)
+        worker.signals.mode_failed.connect(overlay.fail_mode)
+
         worker.signals.mode_cancelled.connect(dialog.on_cancelled)
 
         dialog.cancel_requested.connect(self.engine.cancel_current_mode)
@@ -308,6 +328,39 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Could not duplicate mode: {e}")
 
+    def keyPressEvent(self, event) -> None:
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_K:
+            self.open_command_palette()
+            return
+        super().keyPressEvent(event)
+
+    def open_command_palette(self) -> None:
+        modes = self.mode_manager.get_all_modes()
+        palette = CommandPaletteDialog(modes, parent=self)
+        palette.command_triggered.connect(self._handle_command_palette_action)
+        palette.exec()
+
+    def _handle_command_palette_action(self, action_type: str, payload: object) -> None:
+        if action_type == "run_mode" and isinstance(payload, Mode):
+            self.run_mode(payload.id)
+        elif action_type == "nav_dashboard":
+            self.sidebar.set_active_page(0)
+            self._on_page_changed(0)
+        elif action_type == "nav_modes":
+            self.sidebar.set_active_page(1)
+            self._on_page_changed(1)
+        elif action_type == "nav_devices":
+            self.sidebar.set_active_page(2)
+            self._on_page_changed(2)
+        elif action_type == "nav_logs":
+            self.sidebar.set_active_page(3)
+            self._on_page_changed(3)
+        elif action_type == "nav_settings":
+            self.sidebar.set_active_page(4)
+            self._on_page_changed(4)
+        elif action_type == "create_mode":
+            self.create_mode()
+
     def _on_save_mode(self, mode: Mode) -> None:
         self.mode_manager.save_mode(mode)
         if mode.hotkey:
@@ -325,7 +378,8 @@ class MainWindow(QMainWindow):
 
     def _on_settings_saved(self, new_settings: AppSettings) -> None:
         self.settings_store.save(new_settings)
-        QMessageBox.information(self, "Settings Saved", "Application settings updated successfully.")
+        AnimationManager.set_reduce_motion(new_settings.reduce_motion)
+        ToastManager.show_toast(self, "✓ Settings saved successfully", level="success")
 
     def _on_hotkey_triggered(self, mode_id: str) -> None:
         logger.info(f"Hotkey triggered run of mode '{mode_id}'")
@@ -339,6 +393,10 @@ class MainWindow(QMainWindow):
 
     def _on_page_changed(self, index: int) -> None:
         self.stacked_widget.setCurrentIndex(index)
+        current_widget = self.stacked_widget.currentWidget()
+        if current_widget:
+            AnimationManager.fade_in(current_widget, duration=AnimationDuration.FAST)
+
         if index == 2:
             self.device_panel_view.refresh_devices()
         elif index == 3:

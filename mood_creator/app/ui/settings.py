@@ -55,10 +55,14 @@ class SettingsView(QWidget):
         self.notif_cb = QCheckBox("Enable Windows desktop toast notifications")
         self.notif_cb.setChecked(settings.notifications_enabled)
 
+        self.motion_cb = QCheckBox("Reduce motion animations for accessibility")
+        self.motion_cb.setChecked(settings.reduce_motion)
+
         gen_layout.addWidget(self.autostart_cb)
         gen_layout.addWidget(self.tray_cb)
         gen_layout.addWidget(self.minimized_cb)
         gen_layout.addWidget(self.notif_cb)
+        gen_layout.addWidget(self.motion_cb)
 
         main_layout.addWidget(gen_frame)
 
@@ -129,6 +133,7 @@ class SettingsView(QWidget):
             minimize_to_tray=self.tray_cb.isChecked(),
             launch_minimized=self.minimized_cb.isChecked(),
             notifications_enabled=self.notif_cb.isChecked(),
+            reduce_motion=self.motion_cb.isChecked(),
             app_paths=app_paths,
         )
 
