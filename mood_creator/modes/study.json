@@ -4,7 +4,7 @@
     "name": "Study Mode",
     "description": "Minimize distractions, start focus music, and open study workspace.",
     "icon": "📚",
-    "hotkey": "CTRL+ALT+T",
+    "hotkey": "CTRL+ALT+S",
     "enabled": true,
     "actions": [
         {
