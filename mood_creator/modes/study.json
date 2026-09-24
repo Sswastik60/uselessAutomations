@@ -1,0 +1,28 @@
+{
+    "schema_version": 1,
+    "id": "study_mode",
+    "name": "Study Mode",
+    "description": "Minimize distractions, start focus music, and open study workspace.",
+    "icon": "📚",
+    "hotkey": "CTRL+ALT+T",
+    "enabled": true,
+    "actions": [
+        {
+            "type": "process.launch",
+            "name": "Launch Spotify",
+            "params": {
+                "application": "spotify"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "notification.show",
+            "name": "Notify Ready",
+            "params": {
+                "title": "📚 Study Mode Active",
+                "message": "Focus environment prepared."
+            },
+            "on_failure": "continue"
+        }
+    ]
+}

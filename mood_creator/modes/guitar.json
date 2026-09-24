@@ -1,0 +1,61 @@
+{
+    "schema_version": 1,
+    "id": "guitar_mode",
+    "name": "Guitar Mode",
+    "description": "Detect audio interface, configure input/output, and launch FL Studio for practice.",
+    "icon": "🎸",
+    "hotkey": "CTRL+ALT+G",
+    "enabled": true,
+    "actions": [
+        {
+            "type": "audio.detect_device",
+            "name": "Detect Audio Interface",
+            "params": {
+                "device": "Scarlett 2i2"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "audio.set_input",
+            "name": "Set Audio Input",
+            "params": {
+                "device": "Scarlett 2i2"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "audio.set_output",
+            "name": "Set Audio Output",
+            "params": {
+                "device": "Headphones"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "process.launch",
+            "name": "Launch FL Studio",
+            "params": {
+                "application": "FL Studio"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "process.wait_for",
+            "name": "Wait for FL Studio",
+            "params": {
+                "application": "FL Studio",
+                "timeout": 15
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "notification.show",
+            "name": "Notify Ready",
+            "params": {
+                "title": "🎸 Guitar Mode Ready",
+                "message": "Audio interface configured & FL Studio ready!"
+            },
+            "on_failure": "continue"
+        }
+    ]
+}

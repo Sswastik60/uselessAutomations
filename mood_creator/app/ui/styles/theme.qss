@@ -1,0 +1,338 @@
+/* ===================================================================
+   Windows 11 Modern AMOLED Pure Black Theme
+   Application: Windows 11 Automation Hub / Mood Creator
+   =================================================================== */
+
+QMainWindow, QDialog {
+    background-color: #000000;
+    color: #f8fafc;
+    font-family: 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+}
+
+QWidget {
+    color: #f8fafc;
+    font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Tooltips */
+QToolTip {
+    background-color: #0d0d0d;
+    color: #f8fafc;
+    border: 1px solid #0284c7;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+/* Sidebar Navigation */
+#SidebarWidget {
+    background-color: #040404;
+    border-right: 1px solid #141414;
+    min-width: 230px;
+    max-width: 230px;
+}
+
+#SidebarTitle {
+    font-size: 17px;
+    font-weight: 800;
+    color: #38bdf8;
+    padding: 18px 14px 4px 14px;
+    letter-spacing: 0.5px;
+}
+
+#SidebarSubtitle {
+    color: #64748b;
+    font-size: 11px;
+    padding-left: 14px;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+QPushButton.NavButton {
+    background-color: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin: 2px 8px;
+}
+
+QPushButton.NavButton:hover {
+    background-color: #121212;
+    color: #f8fafc;
+}
+
+QPushButton.NavButton:checked, QPushButton.NavButton.active {
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0284c7, stop:1 #0369a1);
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* Cards & Frames */
+QFrame.ModeCard {
+    background-color: #080808;
+    border: 1px solid #181818;
+    border-radius: 14px;
+    padding: 16px;
+}
+
+QFrame.ModeCard:hover {
+    border: 1px solid #38bdf8;
+    background-color: #0f1520;
+}
+
+QLabel.ModeIcon {
+    font-size: 34px;
+    padding: 4px;
+}
+
+QLabel.ModeTitle {
+    font-size: 17px;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+QLabel.ModeDesc {
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+QLabel.HotkeyPill {
+    background-color: #000000;
+    border: 1px solid #262626;
+    border-radius: 6px;
+    color: #38bdf8;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Consolas', 'Segoe UI Mono', monospace;
+}
+
+QLabel.ActionBadge {
+    background-color: #121212;
+    border: 1px solid #262626;
+    border-radius: 6px;
+    color: #a855f7;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Action Step Pills in Card */
+QLabel.StepPill {
+    background-color: #121212;
+    border-radius: 4px;
+    color: #cbd5e1;
+    font-size: 11px;
+    padding: 2px 6px;
+}
+
+/* Standard Buttons */
+QPushButton.PrimaryButton {
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0284c7, stop:1 #06b6d4);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+QPushButton.PrimaryButton:hover {
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0369a1, stop:1 #0891b2);
+}
+
+QPushButton.PrimaryButton:pressed {
+    background-color: #075985;
+}
+
+QPushButton.SecondaryButton {
+    background-color: #0f0f0f;
+    color: #f8fafc;
+    border: 1px solid #242424;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+QPushButton.SecondaryButton:hover {
+    background-color: #1c1c1c;
+    border-color: #383838;
+}
+
+QPushButton.SecondaryButton:pressed {
+    background-color: #050505;
+}
+
+QPushButton.DangerButton {
+    background-color: #7f1d1d;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 600;
+}
+
+QPushButton.DangerButton:hover {
+    background-color: #991b1b;
+}
+
+QPushButton.AccentButton {
+    background-color: #8b5cf6;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 600;
+}
+
+QPushButton.AccentButton:hover {
+    background-color: #7c3aed;
+}
+
+/* Inputs & Form Controls */
+QLineEdit, QSpinBox, QComboBox, QTextEdit {
+    background-color: #0a0a0a;
+    border: 1px solid #222222;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #f8fafc;
+    selection-background-color: #0284c7;
+    font-size: 13px;
+}
+
+QLineEdit:focus, QComboBox:focus, QTextEdit:focus, QSpinBox:focus {
+    border: 1px solid #38bdf8;
+    background-color: #0f141f;
+}
+
+QComboBox::drop-down {
+    border: none;
+    padding-right: 8px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #0f0f0f;
+    color: #f8fafc;
+    border: 1px solid #242424;
+    selection-background-color: #0284c7;
+    border-radius: 6px;
+    padding: 4px;
+}
+
+QCheckBox {
+    spacing: 8px;
+    font-size: 13px;
+    color: #f8fafc;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1px solid #333333;
+    background-color: #0a0a0a;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #0284c7;
+    border: 1px solid #38bdf8;
+}
+
+/* Tables & Lists */
+QTableWidget, QListWidget {
+    background-color: #050505;
+    border: 1px solid #181818;
+    border-radius: 10px;
+    gridline-color: #141414;
+    color: #f8fafc;
+    outline: none;
+}
+
+QTableWidget::item {
+    padding: 8px 12px;
+}
+
+QTableWidget::item:selected {
+    background-color: #141414;
+    color: #38bdf8;
+}
+
+QHeaderView::section {
+    background-color: #000000;
+    color: #94a3b8;
+    padding: 10px 12px;
+    border: none;
+    border-bottom: 1px solid #181818;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Scrollbars */
+QScrollBar:vertical {
+    background: #000000;
+    width: 8px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: #242424;
+    min-height: 24px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #383838;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background: #000000;
+    height: 8px;
+    margin: 0px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #242424;
+    min-width: 24px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #383838;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* Progress Bar */
+QProgressBar {
+    background-color: #0a0a0a;
+    border: 1px solid #181818;
+    border-radius: 8px;
+    height: 16px;
+    text-align: center;
+    color: transparent;
+}
+
+QProgressBar::chunk {
+    background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0284c7, stop:1 #10b981);
+    border-radius: 7px;
+}
+
+/* Dialogs & Modals */
+QDialog {
+    background-color: #000000;
+}

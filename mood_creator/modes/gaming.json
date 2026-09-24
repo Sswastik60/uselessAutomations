@@ -1,0 +1,44 @@
+{
+    "schema_version": 1,
+    "id": "gaming_mode",
+    "name": "Gaming Mode",
+    "description": "Configure audio output for gaming headphones and launch Steam & Discord.",
+    "icon": "🎮",
+    "hotkey": "CTRL+ALT+X",
+    "enabled": true,
+    "actions": [
+        {
+            "type": "audio.set_output",
+            "name": "Set Gaming Output",
+            "params": {
+                "device": "Headphones"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "process.launch",
+            "name": "Launch Steam",
+            "params": {
+                "application": "steam"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "process.launch",
+            "name": "Launch Discord",
+            "params": {
+                "application": "discord"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "notification.show",
+            "name": "Notify Ready",
+            "params": {
+                "title": "🎮 Gaming Mode Active",
+                "message": "Gaming setup initiated successfully."
+            },
+            "on_failure": "continue"
+        }
+    ]
+}
