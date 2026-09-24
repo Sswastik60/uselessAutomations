@@ -1,0 +1,28 @@
+{
+    "schema_version": 1,
+    "id": "movie_mode",
+    "name": "Movie",
+    "description": "Dim the lights, launch your player, and get cozy.",
+    "icon": "🎬",
+    "hotkey": "CTRL+ALT+T",
+    "enabled": true,
+    "actions": [
+        {
+            "type": "audio.set_output",
+            "name": "Switch Audio to TV/Speakers",
+            "params": {
+                "device": "Speakers"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "notification.show",
+            "name": "Cinema Mode Active",
+            "params": {
+                "title": "🎬 Movie Mode Ready",
+                "message": "Enjoy the show! Volume balanced and displays prepared."
+            },
+            "on_failure": "continue"
+        }
+    ]
+}

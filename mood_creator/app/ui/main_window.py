@@ -54,8 +54,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.app_dir = Path(app_dir)
         self.setWindowTitle("Windows 11 Automation Hub")
-        self.resize(1100, 720)
-        self.setMinimumSize(900, 600)
+        self.resize(1260, 800)
+        self.setMinimumSize(1000, 680)
 
         # Set Window Icon
         icon_path = self.app_dir / "assets" / "app_icon.png"
@@ -98,6 +98,7 @@ class MainWindow(QMainWindow):
         # Sidebar navigation
         self.sidebar = SidebarWidget()
         self.sidebar.page_changed.connect(self._on_page_changed)
+        self.sidebar.theme_toggle_requested.connect(self._toggle_theme)
         main_layout.addWidget(self.sidebar)
 
         # Stacked Views
@@ -111,6 +112,8 @@ class MainWindow(QMainWindow):
         self.dashboard_view.export_mode_requested.connect(self.export_mode)
         self.dashboard_view.duplicate_mode_requested.connect(self.duplicate_mode)
         self.dashboard_view.delete_mode_requested.connect(self._on_delete_mode)
+        self.dashboard_view.navigate_requested.connect(self._on_navigation_requested)
+        self.dashboard_view.hero.command_palette_requested.connect(self.open_command_palette)
 
         self.mode_editor_view = ModeEditorView()
         self.mode_editor_view.save_requested.connect(self._on_save_mode)
@@ -408,6 +411,17 @@ class MainWindow(QMainWindow):
         elif index == 3:
             self.logs_panel_view.refresh_logs()
 
+    def _on_navigation_requested(self, index: int) -> None:
+        self.sidebar.set_active_page(index)
+        self._on_page_changed(index)
+
+    def _toggle_theme(self) -> None:
+        tm = ThemeManager.get_instance()
+        new_theme = "light" if tm.current_theme == "dark" else "dark"
+        tm.set_theme(new_theme)
+        self.settings_store.settings.dark_mode = (new_theme == "dark")
+        self.settings_store.save()
+        ToastManager.show_toast(self, f"Theme switched to {new_theme.capitalize()}", level="info")
 
     def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):

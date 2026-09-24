@@ -1,0 +1,36 @@
+{
+    "schema_version": 1,
+    "id": "music_production_mode",
+    "name": "Music Production",
+    "description": "Launch your DAW, MIDI setup, and creative tools.",
+    "icon": "🎵",
+    "hotkey": "CTRL+ALT+M",
+    "enabled": true,
+    "actions": [
+        {
+            "type": "audio.set_output",
+            "name": "Configure Studio Audio Output",
+            "params": {
+                "device": "Headphones"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "process.launch",
+            "name": "Launch FL Studio DAW",
+            "params": {
+                "application": "FL Studio"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "notification.show",
+            "name": "Studio Setup Ready",
+            "params": {
+                "title": "🎵 Music Production Ready",
+                "message": "DAW launched and audio routing configured."
+            },
+            "on_failure": "continue"
+        }
+    ]
+}
