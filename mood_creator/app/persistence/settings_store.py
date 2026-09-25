@@ -28,8 +28,9 @@ class SettingsStore:
             logger.error(f"Error loading settings file '{self.file_path}': {e}. Using defaults.")
             return AppSettings()
 
-    def save(self, settings: AppSettings) -> None:
-        self.settings = settings
+    def save(self, settings: Optional[AppSettings] = None) -> None:
+        if settings is not None:
+            self.settings = settings
         with open(self.file_path, "w", encoding="utf-8") as f:
-            json.dump(settings.model_dump(mode="json"), f, indent=4)
+            json.dump(self.settings.model_dump(mode="json"), f, indent=4)
         logger.info(f"Saved application settings to {self.file_path}")

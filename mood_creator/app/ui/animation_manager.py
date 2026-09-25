@@ -52,8 +52,16 @@ class AnimationManager:
         anim.setEndValue(1.0)
         anim.setEasingCurve(AnimationEasing.FAST_OUT)
 
-        if on_finished:
-            anim.finished.connect(on_finished)
+        def _cleanup_effect():
+            try:
+                widget.setGraphicsEffect(None)
+                widget.update()
+            except Exception:
+                pass
+            if on_finished:
+                on_finished()
+
+        anim.finished.connect(_cleanup_effect)
 
         # Retain reference on widget to prevent premature GC
         widget._active_fade_anim = anim  # type: ignore

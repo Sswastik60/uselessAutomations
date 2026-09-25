@@ -36,6 +36,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.models.mode import Mode
+from app.ui.smooth_scroll import install_smooth_scroll
 from app.ui.styles.design_tokens import AnimationDuration, DarkPalette
 from app.ui.widgets.mode_card import ModeCard
 
@@ -118,8 +119,8 @@ class HeroBannerWidget(QFrame):
         )
         sb_layout.addWidget(self.search_input, stretch=1)
 
-        self.badge_btn = QPushButton("⌘ K")
-        self.badge_btn.setFixedSize(36, 22)
+        self.badge_btn = QPushButton("Ctrl K")
+        self.badge_btn.setFixedSize(44, 22)
         self.badge_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.badge_btn.setStyleSheet(
             """
@@ -348,87 +349,274 @@ class QuickActionsWidget(QFrame):
         main_layout.addLayout(tiles_layout)
 
 
+class DeviceItemRow(QFrame):
+    """Refined individual device row widget with fixed height and hover interaction."""
+
+    clicked = Signal()
+
+    def __init__(self, icon: str, name: str, sub: str, is_connected: bool = True, parent=None):
+        super().__init__(parent)
+        self.setFixedHeight(38)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setStyleSheet("""
+            QFrame {
+                background-color: transparent;
+                border: none;
+                border-radius: 8px;
+            }
+            QFrame:hover {
+                background-color: #0b1220;
+            }
+        """)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(6, 4, 8, 4)
+        layout.setSpacing(8)
+
+        icon_box = QLabel(icon)
+        icon_box.setFixedSize(26, 26)
+        icon_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon_box.setStyleSheet("background-color: #0c1424; border: 1px solid #16243b; border-radius: 6px; font-size: 11px;")
+
+        text_box = QVBoxLayout()
+        text_box.setContentsMargins(0, 0, 0, 0)
+        text_box.setSpacing(1)
+
+        name_lbl = QLabel(name)
+        name_lbl.setStyleSheet("font-size: 11px; font-weight: 600; color: #f8fafc;")
+
+        sub_lbl = QLabel(sub)
+        sub_lbl.setStyleSheet("font-size: 9px; color: #64748b;")
+
+        text_box.addWidget(name_lbl)
+        text_box.addWidget(sub_lbl)
+
+        conn_badge = QLabel("● Connected" if is_connected else "Offline")
+        conn_badge.setStyleSheet("""
+            background-color: #062b1e;
+            color: #10b981;
+            border: 1px solid #0f5132;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 9px;
+            font-weight: 600;
+        """)
+
+        arrow = QLabel("›")
+        arrow.setStyleSheet("color: #475569; font-size: 13px; font-weight: bold;")
+
+        layout.addWidget(icon_box)
+        layout.addLayout(text_box, stretch=1)
+        layout.addWidget(conn_badge)
+        layout.addWidget(arrow)
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+
+class ActivityItemRow(QFrame):
+    """Refined activity row widget with click-to-run action."""
+
+    run_requested = Signal(str)
+
+    def __init__(self, icon: str, name: str, time_str: str, mode_id: str, parent=None):
+        super().__init__(parent)
+        self.mode_id = mode_id
+        self.setFixedHeight(38)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setStyleSheet("""
+            QFrame {
+                background-color: transparent;
+                border: none;
+                border-radius: 8px;
+            }
+            QFrame:hover {
+                background-color: #0b1220;
+            }
+        """)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(6, 4, 8, 4)
+        layout.setSpacing(8)
+
+        icon_box = QLabel(icon)
+        icon_box.setFixedSize(26, 26)
+        icon_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon_box.setStyleSheet("background-color: #0c1424; border: 1px solid #16243b; border-radius: 6px; font-size: 11px;")
+
+        text_box = QVBoxLayout()
+        text_box.setContentsMargins(0, 0, 0, 0)
+        text_box.setSpacing(1)
+
+        name_lbl = QLabel(name)
+        name_lbl.setStyleSheet("font-size: 11px; font-weight: 600; color: #f8fafc;")
+
+        sub_lbl = QLabel(time_str)
+        sub_lbl.setStyleSheet("font-size: 9px; color: #64748b;")
+
+        text_box.addWidget(name_lbl)
+        text_box.addWidget(sub_lbl)
+
+        run_btn = QPushButton("›")
+        run_btn.setFixedSize(20, 20)
+        run_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        run_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: none;
+                color: #64748b;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                color: #38bdf8;
+            }
+        """)
+        run_btn.clicked.connect(lambda: self.run_requested.emit(self.mode_id))
+
+        layout.addWidget(icon_box)
+        layout.addLayout(text_box, stretch=1)
+        layout.addWidget(run_btn)
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.run_requested.emit(self.mode_id)
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+
 class RightColumnPanel(QWidget):
     """Right sidebar panel containing Connected Devices, Recent Activity, and Live HUD."""
 
     view_devices_requested = Signal()
     view_activity_requested = Signal()
     run_mode_requested = Signal(str)
+    notifications_clicked = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedWidth(290)
+        self.setFixedWidth(295)
+        self.setStyleSheet("background: transparent;")
 
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 12, 14, 14)
-        main_layout.setSpacing(14)
+        panel_layout = QVBoxLayout(self)
+        panel_layout.setContentsMargins(0, 0, 0, 0)
+        panel_layout.setSpacing(0)
 
-        # 1. Top Header Status Bar
-        top_bar = QHBoxLayout()
-        top_bar.setContentsMargins(4, 4, 4, 4)
+        # 1. Pinned Top Status Bar
+        top_bar_widget = QWidget()
+        top_bar_widget.setStyleSheet("background: transparent;")
+        top_bar = QHBoxLayout(top_bar_widget)
+        top_bar.setContentsMargins(4, 16, 16, 8)
         top_bar.setSpacing(8)
 
         self.ready_badge = QLabel("● System Ready")
-        self.ready_badge.setStyleSheet(
-            """
+        self.ready_badge.setStyleSheet("""
             QLabel {
-                background-color: #062b1e;
-                color: #10b981;
-                border: 1px solid #0f5132;
+                background-color: rgba(6, 78, 59, 0.45);
+                color: #34d399;
+                border: 1px solid rgba(16, 185, 129, 0.35);
                 border-radius: 12px;
                 padding: 4px 12px;
                 font-size: 11px;
                 font-weight: 600;
+                letter-spacing: 0.2px;
             }
-            """
-        )
+        """)
 
-        bell_btn = QPushButton("🔔")
-        bell_btn.setFixedSize(28, 28)
-        bell_btn.setStyleSheet(
-            """
+        self.bell_btn = QPushButton("🔔")
+        self.bell_btn.setFixedSize(28, 28)
+        self.bell_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.bell_btn.setToolTip("System Notifications")
+        self.bell_btn.setStyleSheet("""
             QPushButton {
-                background-color: #0b0d14;
-                border: 1px solid #1c2232;
+                background-color: #090e18;
+                border: 1px solid #162032;
                 border-radius: 14px;
                 font-size: 11px;
                 color: #94a3b8;
             }
             QPushButton:hover {
-                background-color: #141a28;
+                background-color: #121c2d;
+                border-color: #0284c7;
                 color: #f8fafc;
             }
-            """
-        )
+            QPushButton:pressed {
+                background-color: #0a1320;
+            }
+        """)
+        self.bell_btn.clicked.connect(self.notifications_clicked.emit)
 
         top_bar.addStretch()
         top_bar.addWidget(self.ready_badge)
-        top_bar.addWidget(bell_btn)
-        main_layout.addLayout(top_bar)
+        top_bar.addWidget(self.bell_btn)
+        panel_layout.addWidget(top_bar_widget)
+
+        # 2. Scroll Area to ensure zero squishing/overlapping on any screen height
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.scroll = scroll
+        self.smooth_scroll = install_smooth_scroll(scroll)
+        scroll.setStyleSheet("""
+            QScrollArea {
+                background: transparent;
+                border: none;
+            }
+            QScrollBar:vertical {
+                background: transparent;
+                width: 4px;
+                margin: 0px;
+            }
+            QScrollBar::handle:vertical {
+                background: #141c2c;
+                min-height: 20px;
+                border-radius: 2px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #0284c7;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+        """)
+
+        content_container = QWidget()
+        content_container.setStyleSheet("background: transparent;")
+        main_layout = QVBoxLayout(content_container)
+        main_layout.setContentsMargins(4, 0, 16, 16)
+        main_layout.setSpacing(12)
 
         # 2. Connected Devices Card
         devices_card = QFrame()
-        devices_card.setStyleSheet(
-            """
-            QFrame {
-                background-color: #06070b;
-                border: 1px solid #141620;
-                border-radius: 14px;
-                padding: 4px;
+        devices_card.setObjectName("DevicesCard")
+        devices_card.setStyleSheet("""
+            QFrame#DevicesCard {
+                background-color: #060913;
+                border: 1px solid #131c2e;
+                border-radius: 12px;
             }
-            """
-        )
+        """)
         dev_layout = QVBoxLayout(devices_card)
-        dev_layout.setContentsMargins(14, 12, 14, 12)
-        dev_layout.setSpacing(10)
+        dev_layout.setContentsMargins(12, 10, 12, 10)
+        dev_layout.setSpacing(2)
 
         dev_header = QHBoxLayout()
-        dev_title = QLabel("● Connected Devices")
+        dev_header.setContentsMargins(4, 0, 4, 4)
+        dev_title = QLabel("Connected Devices")
         dev_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #f8fafc;")
+
         dev_view_all = QPushButton("View all →")
         dev_view_all.setCursor(Qt.CursorShape.PointingHandCursor)
         dev_view_all.setStyleSheet("background: transparent; border: none; font-size: 10px; color: #64748b;")
         dev_view_all.clicked.connect(self.view_devices_requested.emit)
+
         dev_header.addWidget(dev_title)
         dev_header.addStretch()
         dev_header.addWidget(dev_view_all)
@@ -442,70 +630,36 @@ class RightColumnPanel(QWidget):
             ("🎮", "Controller", "Game Controller"),
         ]
         for icon, name, sub in device_items:
-            row = QHBoxLayout()
-            row.setSpacing(8)
-
-            icon_box = QLabel(icon)
-            icon_box.setFixedSize(28, 28)
-            icon_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            icon_box.setStyleSheet("background-color: #0d101a; border-radius: 14px; font-size: 12px;")
-
-            text_box = QVBoxLayout()
-            text_box.setSpacing(1)
-            name_lbl = QLabel(name)
-            name_lbl.setStyleSheet("font-size: 11px; font-weight: 600; color: #f8fafc;")
-            sub_lbl = QLabel(sub)
-            sub_lbl.setStyleSheet("font-size: 9px; color: #64748b;")
-            text_box.addWidget(name_lbl)
-            text_box.addWidget(sub_lbl)
-
-            conn_badge = QLabel("Connected")
-            conn_badge.setStyleSheet(
-                """
-                background-color: #062b1e;
-                color: #10b981;
-                border: 1px solid #0f5132;
-                border-radius: 6px;
-                padding: 2px 6px;
-                font-size: 9px;
-                font-weight: 600;
-                """
-            )
-
-            arrow = QLabel("›")
-            arrow.setStyleSheet("color: #475569; font-size: 14px; font-weight: bold;")
-
-            row.addWidget(icon_box)
-            row.addLayout(text_box, stretch=1)
-            row.addWidget(conn_badge)
-            row.addWidget(arrow)
-            dev_layout.addLayout(row)
+            row_widget = DeviceItemRow(icon, name, sub, is_connected=True, parent=devices_card)
+            row_widget.clicked.connect(self.view_devices_requested.emit)
+            dev_layout.addWidget(row_widget)
 
         main_layout.addWidget(devices_card)
 
         # 3. Recent Activity Card
         act_card = QFrame()
-        act_card.setStyleSheet(
-            """
-            QFrame {
-                background-color: #06070b;
-                border: 1px solid #141620;
-                border-radius: 14px;
-                padding: 4px;
+        act_card.setObjectName("ActCard")
+        act_card.setStyleSheet("""
+            QFrame#ActCard {
+                background-color: #060913;
+                border: 1px solid #131c2e;
+                border-radius: 12px;
             }
-            """
-        )
+        """)
         act_layout = QVBoxLayout(act_card)
-        act_layout.setContentsMargins(14, 12, 14, 12)
-        act_layout.setSpacing(10)
+        act_layout.setContentsMargins(12, 10, 12, 10)
+        act_layout.setSpacing(2)
 
         act_header = QHBoxLayout()
-        act_title = QLabel("🕒 Recent Activity")
+        act_header.setContentsMargins(4, 0, 4, 4)
+        act_title = QLabel("Recent Activity")
         act_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #f8fafc;")
+
         act_view_all = QPushButton("View all →")
         act_view_all.setCursor(Qt.CursorShape.PointingHandCursor)
         act_view_all.setStyleSheet("background: transparent; border: none; font-size: 10px; color: #64748b;")
         act_view_all.clicked.connect(self.view_activity_requested.emit)
+
         act_header.addWidget(act_title)
         act_header.addStretch()
         act_header.addWidget(act_view_all)
@@ -518,116 +672,82 @@ class RightColumnPanel(QWidget):
             ("🎵", "Music Mode", "Completed • Yesterday", "music_production_mode"),
         ]
         for icon, name, time_str, m_id in activities:
-            row = QHBoxLayout()
-            row.setSpacing(8)
-
-            icon_box = QLabel(icon)
-            icon_box.setFixedSize(28, 28)
-            icon_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            icon_box.setStyleSheet("background-color: #0d101a; border-radius: 14px; font-size: 12px;")
-
-            text_box = QVBoxLayout()
-            text_box.setSpacing(1)
-            name_lbl = QLabel(name)
-            name_lbl.setStyleSheet("font-size: 11px; font-weight: 600; color: #f8fafc;")
-            sub_lbl = QLabel(time_str)
-            sub_lbl.setStyleSheet("font-size: 9px; color: #64748b;")
-            text_box.addWidget(name_lbl)
-            text_box.addWidget(sub_lbl)
-
-            arrow = QPushButton("›")
-            arrow.setCursor(Qt.CursorShape.PointingHandCursor)
-            arrow.setStyleSheet("background: transparent; border: none; color: #475569; font-size: 14px; font-weight: bold;")
-            arrow.clicked.connect(lambda _, mode_id=m_id: self.run_mode_requested.emit(mode_id))
-
-            row.addWidget(icon_box)
-            row.addLayout(text_box, stretch=1)
-            row.addWidget(arrow)
-            act_layout.addLayout(row)
+            act_row = ActivityItemRow(icon, name, time_str, m_id, parent=act_card)
+            act_row.run_requested.connect(self.run_mode_requested.emit)
+            act_layout.addWidget(act_row)
 
         main_layout.addWidget(act_card)
 
-        # 4. Docked Live Execution HUD Card
+        # 4. Docked Live Execution / Quick Status HUD Card
         self.hud_card = QFrame()
-        self.hud_card.setStyleSheet(
-            """
-            QFrame {
-                background-color: #07090f;
-                border: 1px solid #1a2234;
-                border-radius: 14px;
-                padding: 6px;
+        self.hud_card.setObjectName("HUDCard")
+        self.hud_card.setStyleSheet("""
+            QFrame#HUDCard {
+                background-color: #060913;
+                border: 1px solid #131c2e;
+                border-radius: 12px;
             }
-            """
-        )
+        """)
         hud_layout = QVBoxLayout(self.hud_card)
         hud_layout.setContentsMargins(14, 12, 14, 12)
         hud_layout.setSpacing(8)
 
         hud_head = QHBoxLayout()
-        hud_icon = QLabel("🎸")
-        hud_icon.setStyleSheet("font-size: 14px;")
+        hud_head.setSpacing(8)
+        self.hud_icon = QLabel("⚡")
+        self.hud_icon.setStyleSheet("font-size: 14px; color: #38bdf8; background: transparent;")
+
         hud_info = QVBoxLayout()
         hud_info.setSpacing(1)
-        self.hud_title = QLabel("Guitar Mode")
-        self.hud_title.setStyleSheet("font-size: 11px; font-weight: 700; color: #f8fafc;")
-        self.hud_sub = QLabel("Ready for automation")
-        self.hud_sub.setStyleSheet("font-size: 9px; color: #94a3b8;")
+        self.hud_title = QLabel("Automation Engine")
+        self.hud_title.setStyleSheet("font-size: 11px; font-weight: 700; color: #f8fafc; background: transparent;")
+
+        self.hud_sub = QLabel("Ready • All systems operational")
+        self.hud_sub.setStyleSheet("font-size: 9px; color: #94a3b8; background: transparent;")
+
         hud_info.addWidget(self.hud_title)
         hud_info.addWidget(self.hud_sub)
 
-        close_btn = QPushButton("✕")
-        close_btn.setFixedSize(18, 18)
-        close_btn.setStyleSheet("background: transparent; border: none; color: #64748b; font-size: 10px;")
-
-        hud_head.addWidget(hud_icon)
+        hud_head.addWidget(self.hud_icon)
         hud_head.addLayout(hud_info, stretch=1)
-        hud_head.addWidget(close_btn)
         hud_layout.addLayout(hud_head)
 
-        # Steps
-        self.steps_box = QVBoxLayout()
-        self.steps_box.setSpacing(4)
-        sample_steps = [
-            ("✓", "Detecting audio interface", "2.1s", "#10b981"),
-            ("✓", "Configuring input/output", "1.8s", "#10b981"),
-            ("✓", "Launching FL Studio", "3.4s", "#10b981"),
-            ("○", "Opening project", "—", "#64748b"),
-        ]
-        for mark, desc, duration, color in sample_steps:
-            s_row = QHBoxLayout()
-            m_lbl = QLabel(mark)
-            m_lbl.setStyleSheet(f"color: {color}; font-size: 11px; font-weight: bold;")
-            d_lbl = QLabel(desc)
-            d_lbl.setStyleSheet("color: #cbd5e1; font-size: 10px;")
-            dur_lbl = QLabel(duration)
-            dur_lbl.setStyleSheet("color: #64748b; font-size: 9px;")
-            s_row.addWidget(m_lbl)
-            s_row.addWidget(d_lbl, stretch=1)
-            s_row.addWidget(dur_lbl)
-            self.steps_box.addLayout(s_row)
+        # Active steps box (hidden when idle, shown when running)
+        self.steps_box = QWidget()
+        self.steps_box.setStyleSheet("background: transparent;")
+        self.steps_layout = QVBoxLayout(self.steps_box)
+        self.steps_layout.setContentsMargins(0, 4, 0, 0)
+        self.steps_layout.setSpacing(4)
+        hud_layout.addWidget(self.steps_box)
+        self.steps_box.setVisible(False)
 
-        hud_layout.addLayout(self.steps_box)
+        # Electric-blue Progress Bar (zero purple)
+        self.prog_container = QWidget()
+        self.prog_container.setStyleSheet("background: transparent;")
+        prog_row = QHBoxLayout(self.prog_container)
+        prog_row.setContentsMargins(0, 0, 0, 0)
+        prog_row.setSpacing(8)
 
-        # Glowing Progress Bar with Counter
-        prog_row = QHBoxLayout()
-        prog_bar = QFrame()
-        prog_bar.setFixedHeight(5)
-        prog_bar.setStyleSheet(
-            """
+        self.prog_bar = QFrame()
+        self.prog_bar.setFixedHeight(4)
+        self.prog_bar.setStyleSheet("""
             QFrame {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #38bdf8, stop:0.75 #818cf8, stop:0.76 #161a24, stop:1 #161a24);
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0284c7, stop:0.8 #38bdf8, stop:0.81 #131c2c, stop:1 #131c2c);
                 border-radius: 2px;
             }
-            """
-        )
-        prog_count = QLabel("3/4")
-        prog_count.setStyleSheet("font-size: 9px; color: #94a3b8; font-weight: 600;")
-        prog_row.addWidget(prog_bar, stretch=1)
-        prog_row.addWidget(prog_count)
-        hud_layout.addLayout(prog_row)
+        """)
+        self.prog_count = QLabel("Idle")
+        self.prog_count.setStyleSheet("font-size: 9px; color: #64748b; font-weight: 600; background: transparent;")
+
+        prog_row.addWidget(self.prog_bar, stretch=1)
+        prog_row.addWidget(self.prog_count)
+        hud_layout.addWidget(self.prog_container)
 
         main_layout.addWidget(self.hud_card)
         main_layout.addStretch()
+
+        scroll.setWidget(content_container)
+        panel_layout.addWidget(scroll)
 
 
 class DashboardView(QWidget):
@@ -641,9 +761,14 @@ class DashboardView(QWidget):
     duplicate_mode_requested = Signal(str)  # mode_id
     delete_mode_requested = Signal(str)     # mode_id
     navigate_requested = Signal(int)        # tab index (0=Home, 1=Modes, 2=Devices, 3=Activity, 4=Settings)
+    notifications_requested = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setObjectName("DashboardView")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setAutoFillBackground(True)
+        self.setStyleSheet("QWidget#DashboardView { background-color: #030305; }")
         self.all_modes: List[Mode] = []
         self._current_filtered_modes: List[Mode] = []
 
@@ -656,6 +781,8 @@ class DashboardView(QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        self.scroll = scroll
+        self.smooth_scroll = install_smooth_scroll(scroll)
 
         left_canvas = QWidget()
         left_layout = QVBoxLayout(left_canvas)
@@ -732,6 +859,7 @@ class DashboardView(QWidget):
         self.right_col.view_devices_requested.connect(lambda: self.navigate_requested.emit(2))
         self.right_col.view_activity_requested.connect(lambda: self.navigate_requested.emit(3))
         self.right_col.run_mode_requested.connect(self.run_mode_requested.emit)
+        self.right_col.notifications_clicked.connect(self.notifications_requested.emit)
         master_layout.addWidget(self.right_col)
 
     def update_modes(self, modes: List[Mode]) -> None:
@@ -795,23 +923,22 @@ class DashboardView(QWidget):
         """Update system status and active mode HUD."""
         if running_mode:
             self.right_col.ready_badge.setText(f"● Running {running_mode}")
-            self.right_col.ready_badge.setStyleSheet(
-                """
+            self.right_col.ready_badge.setStyleSheet("""
                 background-color: #0c2538;
                 color: #38bdf8;
-                border: 1px solid #1e40af;
+                border: 1px solid #0284c7;
                 border-radius: 12px;
                 padding: 4px 12px;
                 font-size: 11px;
                 font-weight: 600;
-                """
-            )
+            """)
             self.right_col.hud_title.setText(f"{running_mode} Mode")
             self.right_col.hud_sub.setText("Executing automation steps...")
+            self.right_col.steps_box.setVisible(True)
+            self.right_col.prog_count.setText("Running")
         else:
             self.right_col.ready_badge.setText("● System Ready")
-            self.right_col.ready_badge.setStyleSheet(
-                """
+            self.right_col.ready_badge.setStyleSheet("""
                 background-color: #062b1e;
                 color: #10b981;
                 border: 1px solid #0f5132;
@@ -819,5 +946,9 @@ class DashboardView(QWidget):
                 padding: 4px 12px;
                 font-size: 11px;
                 font-weight: 600;
-                """
-            )
+            """)
+            self.right_col.hud_title.setText("Automation Engine")
+            self.right_col.hud_sub.setText("Ready • All systems operational")
+            self.right_col.steps_box.setVisible(False)
+            self.right_col.prog_count.setText("Idle")
+

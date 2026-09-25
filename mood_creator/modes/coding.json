@@ -3,24 +3,48 @@
     "id": "coding_mode",
     "name": "Coding Mode",
     "description": "Launch editor, open terminal, and set up workspace.",
-    "icon": "💻",
+    "icon": "</>",
     "hotkey": "CTRL+ALT+C",
     "enabled": true,
     "actions": [
         {
             "type": "process.launch",
-            "name": "Launch VS Code",
+            "name": "Visual Studio Code",
             "params": {
                 "application": "vscode"
             },
             "on_failure": "continue"
         },
         {
-            "type": "notification.show",
-            "name": "Notify Ready",
+            "type": "process.launch",
+            "name": "Terminal",
             "params": {
-                "title": "💻 Coding Mode Active",
-                "message": "Development workspace initialized."
+                "application": "terminal"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "keyboard.shortcut",
+            "name": "Ctrl + `",
+            "params": {
+                "keys": "Ctrl + `"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "folder.open",
+            "name": "Project Directory",
+            "params": {
+                "path": "C:\\Projects\\MyApp"
+            },
+            "on_failure": "continue"
+        },
+        {
+            "type": "notification.show",
+            "name": "Setup Complete",
+            "params": {
+                "title": "Coding Mode Ready",
+                "message": "Lets you know the mode is ready."
             },
             "on_failure": "continue"
         }

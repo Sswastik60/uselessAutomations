@@ -6,7 +6,7 @@ hotkey pill badge, and bottom-right circular execution arrow.
 
 from pathlib import Path
 from typing import Optional
-from PySide6.QtCore import QPoint, QRect, QRectF, Qt, Signal
+from PySide6.QtCore import Property, QEasingCurve, QPoint, QPropertyAnimation, QRect, QRectF, Qt, Signal
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -60,6 +60,9 @@ class ModeCard(QFrame):
         self.setFixedHeight(185)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._is_hovered = False
+        self._hover_progress: float = 0.0
+        self._hover_anim = QPropertyAnimation(self, b"hover_progress", self)
+        self._hover_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
         # Load background artwork if available
         self.bg_pixmap: Optional[QPixmap] = None
@@ -74,20 +77,37 @@ class ModeCard(QFrame):
         top_layout = QHBoxLayout()
         top_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.icon_badge = QLabel(self._get_display_icon())
+        from app.services.icon_service import IconService
+        app_pix = IconService.get_instance().get_mode_app_icon(mode, size=24)
+
+        self.icon_badge = QLabel()
         self.icon_badge.setFixedSize(38, 38)
         self.icon_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.icon_badge.setStyleSheet(
-            """
-            QLabel {
-                background-color: rgba(18, 22, 34, 0.85);
-                border: 1px solid rgba(40, 48, 70, 0.9);
-                border-radius: 19px;
-                font-size: 16px;
-                color: #ffffff;
-            }
-            """
-        )
+        if app_pix and not app_pix.isNull():
+            self.icon_badge.setPixmap(app_pix)
+            self.icon_badge.setStyleSheet(
+                """
+                QLabel {
+                    background-color: rgba(18, 22, 34, 0.85);
+                    border: 1px solid rgba(56, 189, 248, 0.4);
+                    border-radius: 19px;
+                    padding: 3px;
+                }
+                """
+            )
+        else:
+            self.icon_badge.setText(self._get_display_icon())
+            self.icon_badge.setStyleSheet(
+                """
+                QLabel {
+                    background-color: rgba(18, 22, 34, 0.85);
+                    border: 1px solid rgba(40, 48, 70, 0.9);
+                    border-radius: 19px;
+                    font-size: 16px;
+                    color: #ffffff;
+                }
+                """
+            )
         top_layout.addWidget(self.icon_badge)
         top_layout.addStretch()
         main_layout.addLayout(top_layout)
@@ -156,9 +176,20 @@ class ModeCard(QFrame):
 
         main_layout.addLayout(bottom_layout)
 
+    @Property(float)
+    def hover_progress(self) -> float:
+        return self._hover_progress
+
+    @hover_progress.setter
+    def hover_progress(self, val: float) -> None:
+        self._hover_progress = val
+        self.update()
+
     def _clean_title(self, name: str) -> str:
-        """Strip 'Mode' from name if present to match the mockup (e.g. 'Guitar', 'Gaming')."""
-        return name.replace(" Mode", "").strip()
+        """Strip 'Mode' from name cleanly (e.g. 'Guitar', 'Gaming', 'Valo')."""
+        import re
+        clean = re.sub(r"\s+mode$", "", name, flags=re.IGNORECASE).strip()
+        return clean or name
 
     def _get_display_icon(self) -> str:
         m_id = self.mode.id.lower()
@@ -216,7 +247,7 @@ class ModeCard(QFrame):
         painter.fillPath(path, QBrush(QColor("#08090e")))
 
         # Draw right-aligned artwork if present
-        if self.bg_pixmap and not self.bg_pixmap.isNull():
+        if getattr(self, "bg_pixmap", None) is not None and not self.bg_pixmap.isNull():
             art_w = int(w * 0.58)
             art_rect = QRect(w - art_w, 0, art_w, h)
             scaled_pix = self.bg_pixmap.scaled(
@@ -235,12 +266,13 @@ class ModeCard(QFrame):
 
             painter.fillRect(rect, QBrush(grad))
 
-        # Card Border (Normal vs Hover highlight)
+        # Card Border (Smooth liquid hover interpolation from #181b26 to #38bdf8)
         painter.setClipping(False)
-        if self._is_hovered:
-            border_pen = QPen(QColor("#38bdf8"), 1.5)
-        else:
-            border_pen = QPen(QColor("#181b26"), 1.0)
+        p = self._hover_progress
+        r = int(24 + (56 - 24) * p)
+        g = int(27 + (189 - 27) * p)
+        b = int(38 + (248 - 38) * p)
+        border_pen = QPen(QColor(r, g, b), 1.0 + 0.5 * p)
 
         painter.setPen(border_pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
@@ -249,12 +281,20 @@ class ModeCard(QFrame):
     def enterEvent(self, event) -> None:
         super().enterEvent(event)
         self._is_hovered = True
-        self.update()
+        self._hover_anim.stop()
+        self._hover_anim.setDuration(120)
+        self._hover_anim.setStartValue(self._hover_progress)
+        self._hover_anim.setEndValue(1.0)
+        self._hover_anim.start()
 
     def leaveEvent(self, event) -> None:
         super().leaveEvent(event)
         self._is_hovered = False
-        self.update()
+        self._hover_anim.stop()
+        self._hover_anim.setDuration(150)
+        self._hover_anim.setStartValue(self._hover_progress)
+        self._hover_anim.setEndValue(0.0)
+        self._hover_anim.start()
 
     def mousePressEvent(self, event) -> None:
         super().mousePressEvent(event)

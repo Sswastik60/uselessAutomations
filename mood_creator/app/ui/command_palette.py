@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from app.models.mode import Mode
 from app.ui.animation_manager import AnimationManager
+from app.ui.smooth_scroll import install_smooth_scroll
 from app.ui.styles.design_tokens import AnimationDuration, DarkPalette
 
 logger = logging.getLogger(__name__)
@@ -139,6 +140,7 @@ class CommandPaletteDialog(QDialog):
             """
         )
         self.list_widget.itemActivated.connect(self._on_item_activated)
+        self.smooth_scroll = install_smooth_scroll(self.list_widget)
         card_layout.addWidget(self.list_widget, stretch=1)
 
         main_layout.addWidget(self.card)

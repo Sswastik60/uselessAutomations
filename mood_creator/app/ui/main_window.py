@@ -1,3 +1,4 @@
+import ctypes
 import logging
 import os
 import sys
@@ -5,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QAction, QIcon, QPixmap
+from PySide6.QtGui import QAction, QIcon, QKeyEvent, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -13,11 +14,13 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMenu,
     QMessageBox,
-    QStackedWidget,
     QStyle,
     QSystemTrayIcon,
     QWidget,
 )
+
+from app.ui.smooth_stacked import SmoothStackedWidget
+from app.ui.smooth_scroll import install_smooth_scroll
 
 from app import __version__
 from app.core.automation_engine import AutomationEngine
@@ -56,6 +59,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Windows 11 Automation Hub")
         self.resize(1260, 800)
         self.setMinimumSize(1000, 680)
+        # Always open in full screen / maximized
+        self.setWindowState(Qt.WindowState.WindowMaximized)
 
         # Set Window Icon
         icon_path = self.app_dir / "assets" / "app_icon.png"
@@ -101,8 +106,10 @@ class MainWindow(QMainWindow):
         self.sidebar.theme_toggle_requested.connect(self._toggle_theme)
         main_layout.addWidget(self.sidebar)
 
+        self._logs_dirty: bool = False
+
         # Stacked Views
-        self.stacked_widget = QStackedWidget()
+        self.stacked_widget = SmoothStackedWidget()
 
         self.dashboard_view = DashboardView()
         self.dashboard_view.run_mode_requested.connect(self.run_mode)
@@ -114,12 +121,16 @@ class MainWindow(QMainWindow):
         self.dashboard_view.delete_mode_requested.connect(self._on_delete_mode)
         self.dashboard_view.navigate_requested.connect(self._on_navigation_requested)
         self.dashboard_view.hero.command_palette_requested.connect(self.open_command_palette)
+        self.dashboard_view.notifications_requested.connect(
+            lambda: ToastManager.show_toast(self, "All automation background services operational", level="info")
+        )
 
         self.mode_editor_view = ModeEditorView()
         self.mode_editor_view.save_requested.connect(self._on_save_mode)
         self.mode_editor_view.delete_requested.connect(self._on_delete_mode)
         self.mode_editor_view.export_requested.connect(self.export_mode)
-        self.mode_editor_view.cancelled.connect(lambda: (self.sidebar.set_active_page(0), self.stacked_widget.setCurrentIndex(0)))
+        self.mode_editor_view.test_requested.connect(self.run_mode)
+        self.mode_editor_view.cancelled.connect(lambda: (self.sidebar.set_active_page(0), self._on_page_changed(0)))
 
         self.device_panel_view = DevicePanelView()
         self.logs_panel_view = LogsPanelView(self.db)
@@ -152,8 +163,9 @@ class MainWindow(QMainWindow):
         self.status_timer.start(5000)
 
     def _load_stylesheet(self) -> None:
-        theme_mode = "dark" if self.settings_store.settings.dark_mode else "light"
-        ThemeManager.get_instance().set_theme(theme_mode)
+        ThemeManager.get_instance().set_theme("dark")
+        self.settings_store.settings.dark_mode = True
+        self.settings_store.save()
 
     def _init_system_tray(self) -> None:
         self.tray_icon = QSystemTrayIcon(self)
@@ -275,14 +287,14 @@ class MainWindow(QMainWindow):
             mode = self.mode_manager.get_mode(mode_id)
             self.mode_editor_view.load_mode(mode)
             self.sidebar.set_active_page(1)
-            self.stacked_widget.setCurrentIndex(1)
+            self._on_page_changed(1)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Could not load mode for editing: {e}")
 
     def create_mode(self) -> None:
         self.mode_editor_view.load_mode(None)
         self.sidebar.set_active_page(1)
-        self.stacked_widget.setCurrentIndex(1)
+        self._on_page_changed(1)
 
     def export_mode(self, mode_id: str) -> None:
         try:
@@ -327,6 +339,12 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"Could not duplicate mode: {e}")
 
     def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_F11:
+            if self.isFullScreen():
+                self.showMaximized()
+            else:
+                self.showFullScreen()
+            return
         if event.modifiers() & Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_K:
             self.open_command_palette()
             return
@@ -365,20 +383,20 @@ class MainWindow(QMainWindow):
             self.hotkey_service.register_mode_hotkey(mode.id, mode.hotkey)
         self.refresh_dashboard()
         self.sidebar.set_active_page(0)
-        self.stacked_widget.setCurrentIndex(0)
+        self._on_page_changed(0)
 
     def _on_delete_mode(self, mode_id: str) -> None:
         self.hotkey_service.unregister_mode_hotkey(mode_id)
         self.mode_manager.delete_mode(mode_id)
         self.refresh_dashboard()
         self.sidebar.set_active_page(0)
-        self.stacked_widget.setCurrentIndex(0)
+        self._on_page_changed(0)
 
     def _on_settings_saved(self, new_settings: AppSettings) -> None:
+        new_settings.dark_mode = True
         self.settings_store.save(new_settings)
         AnimationManager.set_reduce_motion(new_settings.reduce_motion)
-        theme_mode = "dark" if new_settings.dark_mode else "light"
-        ThemeManager.get_instance().set_theme(theme_mode)
+        ThemeManager.get_instance().set_theme("dark")
         ToastManager.show_toast(self, "✓ Settings saved successfully", level="success")
 
     def _on_hotkey_triggered(self, mode_id: str) -> None:
@@ -390,38 +408,29 @@ class MainWindow(QMainWindow):
         m_id = mode.id if mode else "unknown"
         m_name = mode.name if mode else "System"
         self.db.log_execution(m_id, m_name, action_name, result)
+        self._logs_dirty = True
+        if self.stacked_widget.currentIndex() == 3:
+            self.logs_panel_view.refresh_logs()
+            self._logs_dirty = False
 
     def _on_page_changed(self, index: int) -> None:
-        self.stacked_widget.setCurrentIndex(index)
-        current_widget = self.stacked_widget.currentWidget()
-        if current_widget:
-            try:
-                anim_dur = getattr(AnimationDuration, "FAST", 120)
-                AnimationManager.fade_in(current_widget, duration=anim_dur)
-            except Exception as e:
-                logger.debug(f"Page transition animation error: {e}")
+        self.stacked_widget.set_current_index_smooth(index, reduce_motion=AnimationManager.reduce_motion)
 
         if index == 1:
             if not self.mode_editor_view.current_mode_id:
                 modes = self.mode_manager.get_all_modes()
                 if modes:
                     self.mode_editor_view.load_mode(modes[0])
-        elif index == 2:
-            self.device_panel_view.refresh_devices()
-        elif index == 3:
+        elif index == 3 and self._logs_dirty:
             self.logs_panel_view.refresh_logs()
+            self._logs_dirty = False
 
     def _on_navigation_requested(self, index: int) -> None:
         self.sidebar.set_active_page(index)
         self._on_page_changed(index)
 
     def _toggle_theme(self) -> None:
-        tm = ThemeManager.get_instance()
-        new_theme = "light" if tm.current_theme == "dark" else "dark"
-        tm.set_theme(new_theme)
-        self.settings_store.settings.dark_mode = (new_theme == "dark")
-        self.settings_store.save()
-        ToastManager.show_toast(self, f"Theme switched to {new_theme.capitalize()}", level="info")
+        ThemeManager.get_instance().set_theme("dark")
 
     def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
@@ -430,9 +439,63 @@ class MainWindow(QMainWindow):
     def show_window(self) -> None:
         if self.isMinimized():
             self.showNormal()
-        self.show()
+        self.showMaximized()
         self.raise_()
         self.activateWindow()
+        self._apply_windows_dark_titlebar()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._apply_windows_dark_titlebar()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if event.key() == Qt.Key.Key_F11:
+            if self.isFullScreen():
+                self.showMaximized()
+            else:
+                self.showFullScreen()
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+    def _apply_windows_dark_titlebar(self) -> None:
+        """Apply Windows 11 immersive dark mode and AMOLED black caption color to the native OS title bar."""
+        if sys.platform != "win32":
+            return
+        try:
+            hwnd = int(self.winId())
+            if not hwnd:
+                return
+            DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+            DWMWA_CAPTION_COLOR = 35
+            DWMWA_TEXT_COLOR = 36
+            DWMWA_BORDER_COLOR = 34
+
+            # 1. Enable immersive dark mode for caption & window controls
+            val = ctypes.c_int(1)
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ctypes.byref(val), ctypes.sizeof(val)
+            )
+
+            # 2. Set caption color to match AMOLED background (#030305 -> 0x00050303 in COLORREF 0x00BBGGRR)
+            caption_color = ctypes.c_int(0x00050303)
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                hwnd, DWMWA_CAPTION_COLOR, ctypes.byref(caption_color), ctypes.sizeof(caption_color)
+            )
+
+            # 3. Set title text color to clean soft white (#F8FAFC -> 0x00FCFAF8)
+            text_color = ctypes.c_int(0x00FCFAF8)
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                hwnd, DWMWA_TEXT_COLOR, ctypes.byref(text_color), ctypes.sizeof(text_color)
+            )
+
+            # 4. Set window border color to subtle border (#12131A -> 0x001A1312)
+            border_color = ctypes.c_int(0x001A1312)
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                hwnd, DWMWA_BORDER_COLOR, ctypes.byref(border_color), ctypes.sizeof(border_color)
+            )
+        except Exception as e:
+            logger.debug(f"DWM title bar styling exception: {e}")
 
 
     def closeEvent(self, event) -> None:

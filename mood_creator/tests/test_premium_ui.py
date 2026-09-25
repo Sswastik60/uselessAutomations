@@ -69,3 +69,48 @@ def test_toast_manager(qapp):
     assert isinstance(toast, ToastWidget)
     assert toast.msg_lbl.text() == "Test toast message"
     toast.dismiss()
+
+
+def test_smooth_scroll_filter(qapp):
+    from PySide6.QtWidgets import QScrollArea, QLabel, QVBoxLayout
+    from app.ui.smooth_scroll import install_smooth_scroll, SmoothScrollFilter
+
+    scroll = QScrollArea()
+    content = QWidget()
+    layout = QVBoxLayout(content)
+    for i in range(50):
+        layout.addWidget(QLabel(f"Item {i}"))
+    scroll.setWidget(content)
+    scroll.resize(300, 200)
+
+    smooth = install_smooth_scroll(scroll)
+    assert isinstance(smooth, SmoothScrollFilter)
+    assert smooth.scroll_area is scroll
+    assert smooth.v_scroll_pos == 0.0
+
+    # Test setter
+    smooth.v_scroll_pos = 25.0
+    assert scroll.verticalScrollBar().value() == 25
+
+
+def test_smooth_stacked_widget(qapp):
+    from PySide6.QtWidgets import QLabel
+    from app.ui.smooth_stacked import SmoothStackedWidget
+
+    stacked = SmoothStackedWidget()
+    w1 = QLabel("Page 1")
+    w2 = QLabel("Page 2")
+    stacked.addWidget(w1)
+    stacked.addWidget(w2)
+    stacked.resize(400, 300)
+
+    assert stacked.currentIndex() == 0
+
+    # Smooth switch to page 1
+    stacked.set_current_index_smooth(1)
+    assert stacked.currentIndex() == 1
+
+    # Smooth switch with reduce motion
+    stacked.set_current_index_smooth(0, reduce_motion=True)
+    assert stacked.currentIndex() == 0
+

@@ -27,24 +27,18 @@ class ThemeManager(QObject):
             cls._instance = ThemeManager()
         return cls._instance
 
-    def set_theme(self, theme_mode: str) -> None:
-        """Apply theme ('dark', 'light', or 'system') to QApplication."""
-        mode = theme_mode.lower().strip()
-        if mode not in ("dark", "light", "system"):
-            mode = "dark"
-
-        if mode == "system":
-            mode = "dark"  # Default system preference to dark on Windows 11 control center
-
-        self.current_theme = mode
+    def set_theme(self, theme_mode: str = "dark") -> None:
+        """Apply theme (permanently dark) to QApplication."""
+        mode = "dark"
+        self.current_theme = "dark"
         qss = self.generate_stylesheet(mode)
 
         app = QApplication.instance()
         if app:
             app.setStyleSheet(qss)
-            logger.info(f"Applied live theme: {mode}")
+            logger.info("Applied permanent AMOLED dark theme")
 
-        self.theme_changed.emit(mode)
+        self.theme_changed.emit("dark")
 
     def generate_stylesheet(self, theme_mode: str) -> str:
         """Generate high-precision QSS matching the design tokens."""

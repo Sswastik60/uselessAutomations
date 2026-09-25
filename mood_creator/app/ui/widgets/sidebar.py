@@ -44,19 +44,21 @@ class NavItemButton(QPushButton):
         layout.addWidget(self.dot_lbl)
 
     def set_active_state(self, is_active: bool) -> None:
+        if self.isChecked() == is_active and self.dot_lbl.isVisible() == is_active:
+            return
         self.setChecked(is_active)
         self.dot_lbl.setVisible(is_active)
         if is_active:
             self.setStyleSheet(
                 """
                 QPushButton {
-                    background-color: #12151f;
-                    border: 1px solid #1e2433;
-                    border-radius: 10px;
+                    background-color: #0b1322;
+                    border: 1px solid #142340;
+                    border-radius: 8px;
                 }
                 """
             )
-            self.icon_lbl.setStyleSheet("font-size: 15px; color: #ffffff; background: transparent;")
+            self.icon_lbl.setStyleSheet("font-size: 14px; color: #ffffff; background: transparent;")
             self.text_lbl.setStyleSheet("font-size: 13px; font-weight: 600; color: #ffffff; background: transparent;")
         else:
             self.setStyleSheet(
@@ -64,16 +66,49 @@ class NavItemButton(QPushButton):
                 QPushButton {
                     background-color: transparent;
                     border: 1px solid transparent;
-                    border-radius: 10px;
+                    border-radius: 8px;
                 }
                 QPushButton:hover {
-                    background-color: #0c0e14;
-                    border: 1px solid #181b24;
+                    background-color: #080c15;
+                    border: 1px solid #141b2a;
                 }
                 """
             )
-            self.icon_lbl.setStyleSheet("font-size: 15px; color: #94a3b8; background: transparent;")
-            self.text_lbl.setStyleSheet("font-size: 13px; font-weight: 500; color: #94a3b8; background: transparent;")
+            self.icon_lbl.setStyleSheet("font-size: 14px; color: #64748b; background: transparent;")
+            self.text_lbl.setStyleSheet("font-size: 13px; font-weight: 500; color: #8896ab; background: transparent;")
+
+
+class AvatarOrbWidget(QWidget):
+    """Cosmic nebula avatar matching the reference design."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(30, 30)
+
+    def paintEvent(self, event) -> None:
+        from PySide6.QtGui import QPainter, QRadialGradient, QBrush, QPen, QColor
+        from PySide6.QtCore import QPoint
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        w, h = self.width(), self.height()
+        r = min(w, h) / 2.0 - 1.0
+
+        grad = QRadialGradient(w * 0.4, h * 0.35, r)
+        grad.setColorAt(0.0, QColor("#60a5fa"))
+        grad.setColorAt(0.4, QColor("#3b82f6"))
+        grad.setColorAt(0.75, QColor("#1e1b4b"))
+        grad.setColorAt(1.0, QColor("#0f172a"))
+
+        painter.setBrush(QBrush(grad))
+        painter.setPen(QPen(QColor("#38bdf8"), 1))
+        painter.drawEllipse(QPoint(int(w / 2), int(h / 2)), int(r), int(r))
+
+        spec = QRadialGradient(w * 0.35, h * 0.3, r * 0.5)
+        spec.setColorAt(0.0, QColor(255, 255, 255, 170))
+        spec.setColorAt(1.0, QColor(255, 255, 255, 0))
+        painter.setBrush(QBrush(spec))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(QPoint(int(w * 0.35), int(h * 0.3)), int(r * 0.35), int(r * 0.25))
 
 
 class SidebarWidget(QWidget):
@@ -104,26 +139,8 @@ class SidebarWidget(QWidget):
         )
 
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(14, 16, 14, 16)
+        main_layout.setContentsMargins(14, 18, 14, 16)
         main_layout.setSpacing(8)
-
-        # 1. Traffic Light Window Controls / App Branding
-        top_bar = QHBoxLayout()
-        top_bar.setContentsMargins(4, 0, 4, 10)
-        top_bar.setSpacing(6)
-
-        dot_red = QLabel("●")
-        dot_red.setStyleSheet("color: #ef4444; font-size: 11px;")
-        dot_yellow = QLabel("●")
-        dot_yellow.setStyleSheet("color: #f59e0b; font-size: 11px;")
-        dot_green = QLabel("●")
-        dot_green.setStyleSheet("color: #10b981; font-size: 11px;")
-
-        top_bar.addWidget(dot_red)
-        top_bar.addWidget(dot_yellow)
-        top_bar.addWidget(dot_green)
-        top_bar.addStretch()
-        main_layout.addLayout(top_bar)
 
         # App Logo & Tagline Header
         logo_box = QHBoxLayout()
@@ -190,17 +207,7 @@ class SidebarWidget(QWidget):
         profile_layout.setContentsMargins(8, 8, 8, 8)
         profile_layout.setSpacing(10)
 
-        avatar_lbl = QLabel("👤")
-        avatar_lbl.setStyleSheet(
-            """
-            background-color: #141824;
-            color: #38bdf8;
-            border: 1px solid #243048;
-            border-radius: 14px;
-            font-size: 14px;
-            padding: 4px 6px;
-            """
-        )
+        avatar_orb = AvatarOrbWidget()
 
         name_box = QVBoxLayout()
         name_box.setSpacing(1)
@@ -214,32 +221,11 @@ class SidebarWidget(QWidget):
         chevron_lbl = QLabel("›")
         chevron_lbl.setStyleSheet("color: #64748b; font-size: 16px; font-weight: bold;")
 
-        profile_layout.addWidget(avatar_lbl)
+        profile_layout.addWidget(avatar_orb)
         profile_layout.addLayout(name_box, stretch=1)
         profile_layout.addWidget(chevron_lbl)
 
         main_layout.addWidget(profile_card)
-
-        # 4. Theme Selector Row
-        theme_btn = QPushButton("🌙 Dark Mode   ⌵")
-        theme_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        theme_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: transparent;
-                border: none;
-                color: #64748b;
-                font-size: 11px;
-                padding: 6px 8px;
-                text-align: left;
-            }
-            QPushButton:hover {
-                color: #94a3b8;
-            }
-            """
-        )
-        theme_btn.clicked.connect(self.theme_toggle_requested.emit)
-        main_layout.addWidget(theme_btn)
 
         # Select Dashboard (index 0) by default
         self.set_active_page(0)
