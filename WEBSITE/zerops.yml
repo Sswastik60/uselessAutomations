@@ -1,0 +1,11 @@
+zerops:
+  - setup: app
+    build:
+      base: nodejs@20
+      deployFiles:
+        - index.html
+        - css
+        - js
+        - assets
+    run:
+      base: static
