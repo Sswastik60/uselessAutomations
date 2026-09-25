@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automation Hub — One Shortcut. Your Whole Setup, Ready.</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Automation Hub turns repetitive Windows 11 setups into one-click Modes. Launch apps, configure audio devices, arrange windows, and get straight to what you're doing with a single global hotkey.">
+  <meta name="keywords" content="Windows 11, automation, mode creator, desktop automation, global hotkeys, audio switching, WASAPI, workflow orchestrator">
+  <meta name="author" content="Automation Hub Team">
+
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Automation Hub — One Shortcut. Your Whole Setup, Ready.">
+  <meta property="og:description" content="Turn repetitive Windows setups into one-click Modes. Built natively for Windows 11.">
+  <meta property="og:image" content="assets/ui/hero_dunes.jpg">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/app_icon.png">
+
+  <!-- Modern Typography (Inter via Google Fonts) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Design System & Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Floating Navigation Bar -->
+  <header class="nav-wrapper" id="mainNav">
+    <div class="container">
+      <nav class="nav-container" aria-label="Main Navigation">
+        <a href="#" class="brand" aria-label="Automation Hub Home">
+          <div class="brand-icon">⚡</div>
+          <span>Automation Hub</span>
+          <span class="brand-badge">v2.0</span>
+        </a>
+
+        <ul class="nav-links">
+          <li><a href="#interaction">Experience</a></li>
+          <li><a href="#modes">Modes</a></li>
+          <li><a href="#engine">The Engine</a></li>
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#showcase">Showcase</a></li>
+          <li><a href="https://github.com/Sswastik60/uselessAutomations" target="_blank" rel="noopener">GitHub</a></li>
+        </ul>
+
+        <div class="nav-actions">
+          <a href="https://github.com/Sswastik60/uselessAutomations/releases/download/v2.0.0/AutomationHub.exe" class="btn btn-primary btn-sm" id="navDownloadBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.901-1.799"/>
+            </svg>
+            Download for Windows
+          </a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ======================================================================
+         HERO SECTION: The First 5 Seconds
+         ====================================================================== -->
+    <section class="hero" id="hero">
+      <div class="container">
+        <div class="hero-content">
+          
+          <div class="hero-pill">
+            <span class="status-indicator"></span>
+            <span>Version 2.0.0 Released with Native Window Targeting</span>
+          </div>
+
+          <h1 class="hero-title">
+            Your PC.
+            <span>Ready when you are.</span>
+          </h1>
+
+          <p class="hero-desc">
+            Turn repetitive Windows setups into one-click Modes. Launch apps, configure devices, arrange your workspace, and get straight to what you're doing.
+          </p>
+
+          <div class="hero-actions">
+            <a href="https://github.com/Sswastik60/uselessAutomations/releases/download/v2.0.0/AutomationHub.exe" class="btn btn-primary btn-lg" id="heroPrimaryDownload">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.901-1.799"/>
+              </svg>
+              Download for Windows
+            </a>
+            <a href="#modes" class="btn btn-secondary btn-lg">Explore Modes</a>
+          </div>
+
+          <div class="hero-subtext">
+            <span>Windows 11</span> • <span>Free & Open Source</span> • <span>Portable Executable</span>
+          </div>
+
+        </div>
+
+        <!-- Hero Visual: Cinematic Windows 11 Automation Hub App Mockup -->
+        <div class="hero-visual-wrapper">
+          <div class="app-frame" id="heroAppFrame">
+            
+            <!-- Windows 11 Titlebar -->
+            <div class="win-titlebar">
+              <div class="win-titlebar-left">
+                <img src="assets/app_icon.png" alt="Automation Hub" class="win-icon">
+                <span>Automation Hub</span>
+              </div>
+              <div class="win-titlebar-center">v2.0.0 — Ready</div>
+              <div class="win-titlebar-controls">
+                <span>─</span>
+                <span>□</span>
+                <span>✕</span>
+              </div>
+            </div>
+
+            <!-- App Main Interface Body -->
+            <div class="app-body">
+              <!-- Sidebar -->
+              <aside class="app-sidebar">
+                <div class="app-sidebar-label">Navigation</div>
+                <div class="app-nav-item active">
+                  <span class="nav-icon">⚡</span> Dashboard
+                </div>
+                <div class="app-nav-item">
+                  <span class="nav-icon">📁</span> My Modes
+                </div>
+                <div class="app-nav-item">
+                  <span class="nav-icon">🔊</span> Devices
+                </div>
+                <div class="app-nav-item">
+                  <span class="nav-icon">📊</span> Activity Log
+                </div>
+                <div class="app-nav-item">
+                  <span class="nav-icon">⚙️</span> Settings
+                </div>
+              </aside>
+
+              <!-- Main Dashboard Area -->
+              <section class="app-main-content">
+                
+                <!-- Hero Banner within App -->
+                <div class="app-banner">
+                  <div class="app-banner-overlay"></div>
+                  <div class="app-banner-content">
+                    <h3>Focus on Creating, Not Configuring</h3>
+                    <p>Trigger your custom workstation profile with a single global keypress or button.</p>
+                  </div>
+                </div>
+
+                <!-- 4 Real Application Mode Cards -->
+                <div class="app-modes-grid">
+                  
+                  <!-- Guitar Mode Card -->
+                  <div class="app-mode-card" data-mode="guitar" id="cardGuitar">
+                    <div class="mode-card-header">
+                      <span class="mode-icon">🎸</span>
+                      <span class="mode-hotkey">CTRL+ALT+G</span>
+                    </div>
+                    <div class="mode-info">
+                      <h4>Guitar Mode</h4>
+                      <p>Scarlett 2i2, Headphones, FL Studio & Tabs</p>
+                    </div>
+                    <div class="mode-status-line">
+                      <span class="status-text">Click to simulate</span>
+                      <div class="mode-play-btn">▶</div>
+                    </div>
+                  </div>
+
+                  <!-- Gaming Mode Card -->
+                  <div class="app-mode-card" data-mode="gaming" id="cardGaming">
+                    <div class="mode-card-header">
+                      <span class="mode-icon">🎮</span>
+                      <span class="mode-hotkey">CTRL+ALT+X</span>
+                    </div>
+                    <div class="mode-info">
+                      <h4>Gaming Mode</h4>
+                      <p>Headset Audio, Steam, Discord & Clean desktop</p>
+                    </div>
+                    <div class="mode-status-line">
+                      <span class="status-text">Click to simulate</span>
+                      <div class="mode-play-btn">▶</div>
+                    </div>
+                  </div>
+
+                  <!-- Coding Mode Card -->
+                  <div class="app-mode-card" data-mode="coding" id="cardCoding">
+                    <div class="mode-card-header">
+                      <span class="mode-icon">💻</span>
+                      <span class="mode-hotkey">CTRL+ALT+C</span>
+                    </div>
+                    <div class="mode-info">
+                      <h4>Coding Mode</h4>
+                      <p>VS Code, Terminal, Monorepo & Browser F11</p>
+                    </div>
+                    <div class="mode-status-line">
+                      <span class="status-text">Click to simulate</span>
+                      <div class="mode-play-btn">▶</div>
+                    </div>
+                  </div>
+
+                  <!-- Study Mode Card -->
+                  <div class="app-mode-card" data-mode="study" id="cardStudy">
+                    <div class="mode-card-header">
+                      <span class="mode-icon">📚</span>
+                      <span class="mode-hotkey">CTRL+ALT+S</span>
+                    </div>
+                    <div class="mode-info">
+                      <h4>Study Mode</h4>
+                      <p>Spotify Focus, Mute non-essentials & Workspace</p>
+                    </div>
+                    <div class="mode-status-line">
+                      <span class="status-text">Click to simulate</span>
+                      <div class="mode-play-btn">▶</div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Live Docked Execution HUD -->
+                <div class="app-hud">
+                  <div class="app-hud-left">
+                    <div class="hud-pulse" id="heroHudPulse"></div>
+                    <div>
+                      <div class="hud-status-title" id="heroHudTitle">Automation Hub Active</div>
+                      <div class="hud-status-sub" id="heroHudSub">Listening for system-wide hotkeys in background</div>
+                    </div>
+                  </div>
+                  <div class="hud-timing" id="heroHudTime">Ready</div>
+                </div>
+
+              </section>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SIGNATURE INTERACTION SECTION
+         "Press CTRL + ALT + G -> Preparing -> READY"
+         ====================================================================== -->
+    <section class="signature-section" id="interaction">
+      <div class="container">
+        
+        <div class="signature-container">
+          <div class="signature-header">
+            <div class="section-tag">
+              <span class="dot"></span> Signature Interaction
+            </div>
+            <h2 class="section-title">See it in motion.</h2>
+            <p class="section-desc" style="margin: 0 auto;">
+              Press the shortcut on your physical keyboard, or click the trigger below to watch Automation Hub orchestrate a full workstation transformation in 0.38 seconds.
+            </p>
+          </div>
+
+          <div class="sim-interactive-box">
+            
+            <div class="sim-hotkey-prompt">
+              <div>
+                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 600; display: block; margin-bottom: 6px;">Global Shortcut</span>
+                <div class="sim-hotkey-keys" id="simHotkeysContainer">
+                  <span class="sim-key">Ctrl</span>
+                  <span style="color: #64748b; font-size: 11px;">+</span>
+                  <span class="sim-key">Alt</span>
+                  <span style="color: #64748b; font-size: 11px;">+</span>
+                  <span class="sim-key">G</span>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 8px;">
+                <button class="sim-trigger-btn" id="simTriggerBtn">
+                  <span>▶ Trigger Setup</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="sim-mode-indicator">
+              <div class="sim-mode-badge" id="simModeBadge">
+                <span class="badge-icon">🎸</span>
+                <span>Guitar Mode</span>
+              </div>
+              <div class="sim-status-badge" id="simStatusText">
+                Ready to execute (CTRL + ALT + G)
+              </div>
+            </div>
+
+            <!-- Real sequential step-by-step pipeline -->
+            <ul class="sim-steps-list" id="simStepsList">
+              <!-- Dynamically rendered via app.js -->
+            </ul>
+
+            <!-- Ready Completion Confirmation Banner -->
+            <div class="sim-ready-banner" id="simReadyBanner">
+              <div class="sim-ready-left">
+                <span>✓</span>
+                <span>READY. Your workstation is primed.</span>
+              </div>
+              <div class="sim-ready-metric">Elapsed: 0.38s • 0 errors</div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION: The Problem (Before vs With Automation Hub)
+         ====================================================================== -->
+    <section class="problem-section" id="problem">
+      <div class="container">
+        
+        <div style="text-align: center; max-width: 680px; margin: 0 auto;">
+          <div class="section-tag">
+            <span class="dot"></span> The Friction Problem
+          </div>
+          <h2 class="section-title">The setup tax is real.</h2>
+          <p class="section-desc" style="margin: 0 auto;">
+            Every time you sit down to play guitar, produce a track, or drop into a game, Windows forces you through the exact same tedious checklist.
+          </p>
+        </div>
+
+        <div class="comparison-grid">
+          
+          <!-- Before Card -->
+          <div class="comp-card before">
+            <div class="comp-card-badge">Before Automation Hub</div>
+            <h3 class="comp-title">Manual Friction</h3>
+            <p class="comp-subtitle">7 repetitive steps, broken focus, lost momentum.</p>
+
+            <div class="before-flow">
+              <div class="before-step">
+                <span class="step-num">01</span>
+                <span>Open FL Studio 2026</span>
+                <span class="step-time">45s</span>
+              </div>
+              <div class="before-step">
+                <span class="step-num">02</span>
+                <span>Plug in USB Audio Interface</span>
+                <span class="step-time">15s</span>
+              </div>
+              <div class="before-step">
+                <span class="step-num">03</span>
+                <span>Open Windows Sound Control Panel</span>
+                <span class="step-time">25s</span>
+              </div>
+              <div class="before-step">
+                <span class="step-num">04</span>
+                <span>Switch input to Scarlett 2i2</span>
+                <span class="step-time">20s</span>
+              </div>
+              <div class="before-step">
+                <span class="step-num">05</span>
+                <span>Switch output to Studio Headphones</span>
+                <span class="step-time">18s</span>
+              </div>
+              <div class="before-step">
+                <span class="step-num">06</span>
+                <span>Navigate and open practice project file</span>
+                <span class="step-time">30s</span>
+              </div>
+              <div class="before-step">
+                <span class="step-num">07</span>
+                <span>Arrange windows, minimize distractions</span>
+                <span class="step-time">22s</span>
+              </div>
+
+              <div class="before-total">
+                <span>Total wasted setup time</span>
+                <span class="before-total-time">~2 minutes 55 seconds</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- With Automation Hub Card -->
+          <div class="comp-card after">
+            <div class="comp-card-badge">With Automation Hub</div>
+            <h3 class="comp-title">One Shortcut.</h3>
+            <p class="comp-subtitle">The complicated workflow collapsed into a single decisive stroke.</p>
+
+            <div class="after-flow">
+              <div class="after-shortcut-box">
+                CTRL + ALT + G
+              </div>
+              <div class="after-arrow">↓</div>
+              <div class="after-result-box">
+                ✓ READY.
+              </div>
+              <div class="after-stat">
+                Zero friction. <strong>0.38 seconds</strong> total execution time.
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION: MODES
+         "Build a Mode for anything."
+         ====================================================================== -->
+    <section class="modes-section" id="modes">
+      <div class="container">
+        
+        <div style="text-align: center; max-width: 720px; margin: 0 auto 50px;">
+          <div class="section-tag">
+            <span class="dot"></span> Built-in Workstation Profiles
+          </div>
+          <h2 class="section-title">Build a Mode for anything.</h2>
+          <p class="section-desc" style="margin: 0 auto;">
+            Your computer should adapt to what you're doing — not the other way around.
+          </p>
+        </div>
+
+        <div class="modes-grid">
+          
+          <!-- Mode 1: Guitar Mode -->
+          <article class="mode-feature-card">
+            <div class="mode-card-bg" style="background-image: url('assets/ui/mode_guitar.jpg');"></div>
+            <div class="mode-card-gradient"></div>
+            <div class="mode-card-body">
+              <div class="mode-badge-row">
+                <span class="mode-tag">🎸 Music & Audio</span>
+                <span class="mode-shortcut-tag">CTRL + ALT + G</span>
+              </div>
+              <h3 class="mode-card-title">Guitar Mode</h3>
+              <div class="mode-card-tagline">Plug in. Press one key. Start playing.</div>
+              <p class="mode-card-desc">
+                Scans USB endpoints for Scarlett 2i2, routes playback to low-latency headphones, launches FL Studio with your practice tab template, and announces ready status.
+              </p>
+              <div class="mode-actions-chips">
+                <span class="action-chip">Scarlett 2i2 WASAPI</span>
+                <span class="action-chip">Direct Monitor</span>
+                <span class="action-chip"><img src="assets/extracted_icons/fl_studio_2026_24.png" alt="FL Studio"> FL Studio</span>
+                <span class="action-chip">Lead_Practice.flp</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Mode 2: Gaming Mode -->
+          <article class="mode-feature-card">
+            <div class="mode-card-bg" style="background-image: url('assets/ui/mode_gaming.jpg');"></div>
+            <div class="mode-card-gradient"></div>
+            <div class="mode-card-body">
+              <div class="mode-badge-row">
+                <span class="mode-tag">🎮 Competitive & Casual</span>
+                <span class="mode-shortcut-tag">CTRL + ALT + X</span>
+              </div>
+              <h3 class="mode-card-title">Gaming Mode</h3>
+              <div class="mode-card-tagline">From desktop to game-ready in seconds.</div>
+              <p class="mode-card-desc">
+                Reroutes audio to spatial headset, boots Steam and Discord, minimizes background browser clutter, and primes your machine for peak frame rates.
+              </p>
+              <div class="mode-actions-chips">
+                <span class="action-chip">Headphones Output</span>
+                <span class="action-chip"><img src="assets/extracted_icons/steam_24.png" alt="Steam"> Steam Client</span>
+                <span class="action-chip"><img src="assets/extracted_icons/discord_24.png" alt="Discord"> Discord</span>
+                <span class="action-chip">Minimize All</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Mode 3: Coding Mode -->
+          <article class="mode-feature-card">
+            <div class="mode-card-bg" style="background-image: url('assets/ui/mode_coding.jpg');"></div>
+            <div class="mode-card-gradient"></div>
+            <div class="mode-card-body">
+              <div class="mode-badge-row">
+                <span class="mode-tag">💻 Engineering</span>
+                <span class="mode-shortcut-tag">CTRL + ALT + C</span>
+              </div>
+              <h3 class="mode-card-title">Coding Mode</h3>
+              <div class="mode-card-tagline">Your dev environment, ready before you are.</div>
+              <p class="mode-card-desc">
+                Launches Visual Studio Code on your monorepo, opens Windows Terminal in the project root, brings the code editor to the foreground, and opens browser localhost in full screen.
+              </p>
+              <div class="mode-actions-chips">
+                <span class="action-chip">VS Code Workspace</span>
+                <span class="action-chip">Windows Terminal</span>
+                <span class="action-chip">Window Focus</span>
+                <span class="action-chip">Localhost F11</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Mode 4: Study Mode -->
+          <article class="mode-feature-card">
+            <div class="mode-card-bg" style="background-image: url('assets/ui/mode_study.jpg');"></div>
+            <div class="mode-card-gradient"></div>
+            <div class="mode-card-body">
+              <div class="mode-badge-row">
+                <span class="mode-tag">📚 Deep Work</span>
+                <span class="mode-shortcut-tag">CTRL + ALT + S</span>
+              </div>
+              <h3 class="mode-card-title">Study Mode</h3>
+              <div class="mode-card-tagline">Remove the friction. Start focusing.</div>
+              <p class="mode-card-desc">
+                Silences background communications, starts your favorite Spotify deep focus playlist at 35% volume, and opens your notes in distraction-free mode.
+              </p>
+              <div class="mode-actions-chips">
+                <span class="action-chip"><img src="assets/extracted_icons/spotify_24.png" alt="Spotify"> Spotify</span>
+                <span class="action-chip">Volume: 35%</span>
+                <span class="action-chip">Silence Alerts</span>
+                <span class="action-chip">Focus Workspace</span>
+              </div>
+            </div>
+          </article>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION: HOW IT WORKS
+         01 Create -> 02 Trigger -> 03 Ready
+         ====================================================================== -->
+    <section class="how-section" id="how-it-works">
+      <div class="container">
+        
+        <div style="text-align: center; max-width: 680px; margin: 0 auto;">
+          <div class="section-tag">
+            <span class="dot"></span> Simplicity By Design
+          </div>
+          <h2 class="section-title">Three steps. Zero friction.</h2>
+          <p class="section-desc" style="margin: 0 auto;">
+            No complex scripting, no fragile autohotkey quirks. Just pure native actions.
+          </p>
+        </div>
+
+        <div class="steps-grid">
+          
+          <div class="step-card">
+            <span class="step-number">01 — CREATE</span>
+            <h3 class="step-heading">Build Your Mode</h3>
+            <p class="step-body">
+              Assemble actions in the intuitive visual editor. Select running windows, choose audio endpoints, specify delays, and set process parameters with one click.
+            </p>
+            <div class="step-visual">
+              <code>action: audio.set_output<br>device: "Scarlett 2i2"<br>on_failure: continue</code>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <span class="step-number">02 — TRIGGER</span>
+            <h3 class="step-heading">One Global Hotkey</h3>
+            <p class="step-body">
+              Bind any key combination like <code>CTRL+ALT+G</code>. The Win32 hotkey thread listens system-wide, even when Automation Hub is minimized to the system tray.
+            </p>
+            <div class="step-visual">
+              <code>hotkey: RegisterHotKey(MOD_CONTROL | MOD_ALT, VK_G)</code>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <span class="step-number">03 — READY</span>
+            <h3 class="step-heading">Setup Delivered</h3>
+            <p class="step-body">
+              The engine executes the sequence with sub-millisecond precision, focuses the right window, and fires an acrylic toast notification so you never miss a beat.
+            </p>
+            <div class="step-visual">
+              <code>✓ 5/5 actions passed (0.38s)<br>Toast: "Guitar Mode Ready"</code>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION: THE AUTOMATION ENGINE (Real verified capabilities)
+         ====================================================================== -->
+    <section class="engine-section" id="engine">
+      <div class="container">
+        
+        <div style="text-align: center; max-width: 720px; margin: 0 auto 50px;">
+          <div class="section-tag">
+            <span class="dot"></span> Under The Hood
+          </div>
+          <h2 class="section-title">More than launching apps.</h2>
+          <p class="section-desc" style="margin: 0 auto;">
+            A low-level automation engine built directly on Windows 11 system primitives.
+          </p>
+        </div>
+
+        <div class="engine-grid">
+          
+          <!-- Engine 1: Process Orchestration -->
+          <div class="engine-card">
+            <div class="engine-icon">🚀</div>
+            <h4 class="engine-card-title">Process Orchestration</h4>
+            <p class="engine-card-desc">
+              Launch executables, shortcuts (<code>.lnk</code>), or background services. Includes <code>process.wait_for</code> timeouts to ensure heavy DAW/game engines initialize before firing subsequent actions.
+            </p>
+            <span class="engine-code-pill">process.launch • process.wait_for</span>
+          </div>
+
+          <!-- Engine 2: Audio Endpoint Controller -->
+          <div class="engine-card">
+            <div class="engine-icon">🔊</div>
+            <h4 class="engine-card-title">WASAPI Audio Routing</h4>
+            <p class="engine-card-desc">
+              Direct integration with Windows Core Audio APIs (WASAPI). Switch playback and recording default devices, adjust master volume, or mute outputs instantly without opening Windows Settings.
+            </p>
+            <span class="engine-code-pill">audio.set_device • audio.set_volume</span>
+          </div>
+
+          <!-- Engine 3: Window Management -->
+          <div class="engine-card">
+            <div class="engine-icon">🪟</div>
+            <h4 class="engine-card-title">Window Management</h4>
+            <p class="engine-card-desc">
+              Focus-stealing bypass using <code>AttachThreadInput</code> and <code>SetForegroundWindow</code>. Minimize all background windows (<code>Win+M</code>), bring apps to the foreground, or toggle dedicated F11 fullscreen.
+            </p>
+            <span class="engine-code-pill">window.focus • window.fullscreen</span>
+          </div>
+
+          <!-- Engine 4: Hardware Scan Codes -->
+          <div class="engine-card">
+            <div class="engine-icon">⌨️</div>
+            <h4 class="engine-card-title">Hardware Scan Code Synthesis</h4>
+            <p class="engine-card-desc">
+              Keystroke injection maps virtual keys to physical hardware scan codes via <code>MapVirtualKey</code>. Works seamlessly inside Chromium browsers, games, and DAWs that ignore standard virtual inputs.
+            </p>
+            <span class="engine-code-pill">keyboard.shortcut • keyboard.type</span>
+          </div>
+
+          <!-- Engine 5: Browser Integration -->
+          <div class="engine-card">
+            <div class="engine-icon">🌐</div>
+            <h4 class="engine-card-title">Browser Fullscreen Action</h4>
+            <p class="engine-card-desc">
+              One-click URL launching directly in your default browser, with automated delay and optional F11 full-screen toggle for distraction-free video playback or web monitoring.
+            </p>
+            <span class="engine-code-pill">browser.open_url</span>
+          </div>
+
+          <!-- Engine 6: Global Hotkey Daemon -->
+          <div class="engine-card">
+            <div class="engine-icon">⚡</div>
+            <h4 class="engine-card-title">Native Win32 Hotkey Thread</h4>
+            <p class="engine-card-desc">
+              Zero-latency global shortcuts registered with <code>RegisterHotKey</code>. Runs on a dedicated background message loop that catches hotkeys even when the main window is closed to the system tray.
+            </p>
+            <span class="engine-code-pill">app.windows.hotkeys</span>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION: THE MOMENT (Cinematic Emotional Peak)
+         ====================================================================== -->
+    <section class="moment-section" id="moment">
+      <div class="container container-narrow">
+        
+        <div class="moment-text-small">Every single day</div>
+
+        <div class="moment-routine-list">
+          <div class="moment-line">Open the app.</div>
+          <div class="moment-line">Change the audio.</div>
+          <div class="moment-line">Find the project.</div>
+          <div class="moment-line">Arrange the windows.</div>
+          <div class="moment-line">Start working.</div>
+        </div>
+
+        <div class="moment-pause-divider"></div>
+
+        <div class="moment-climax-question">What if you didn't have to?</div>
+
+        <div class="moment-climax-punchline">
+          One shortcut. <span>Everything ready.</span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION: BUILT FOR WINDOWS 11
+         ====================================================================== -->
+    <section class="windows-section" id="windows">
+      <div class="container">
+        
+        <div style="text-align: center; max-width: 680px; margin: 0 auto 50px;">
+          <div class="section-tag">
+            <span class="dot"></span> Native Integration
+          </div>
+          <h2 class="section-title">Built for Windows 11.</h2>
+          <p class="section-desc" style="margin: 0 auto;">
+            Not a sluggish Electron wrapper. Fast, native, and deeply integrated into the operating system.
+          </p>
+        </div>
+
+        <div class="windows-grid">
+          
+          <div class="windows-feature-box">
+            <span class="win-badge">Win32 Core</span>
+            <h4>Global Hotkeys</h4>
+            <p>Direct low-level hooks handle shortcuts reliably across every game, IDE, and full-screen application.</p>
+          </div>
+
+          <div class="windows-feature-box">
+            <span class="win-badge">WASAPI Subsystem</span>
+            <h4>Audio Devices</h4>
+            <p>Seamlessly enumerate and route Windows Core Audio endpoints, volume levels, and mute states.</p>
+          </div>
+
+          <div class="windows-feature-box">
+            <span class="win-badge">Desktop Window Manager</span>
+            <h4>Window Management</h4>
+            <p>Target windows by title substring, bypass focus locks, minimize desktop clutter, and toggle F11.</p>
+          </div>
+
+          <div class="windows-feature-box">
+            <span class="win-badge">Background Service</span>
+            <h4>System Tray Presence</h4>
+            <p>Closes cleanly to the notification area with a lightweight memory footprint of under 45 MB.</p>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         PRODUCT SHOWCASE: Interactive Tabs
+         ====================================================================== -->
+    <section class="showcase-section" id="showcase">
+      <div class="container">
+        
+        <div style="text-align: center; max-width: 680px; margin: 0 auto 40px;">
+          <div class="section-tag">
+            <span class="dot"></span> Product Tour
+          </div>
+          <h2 class="section-title">Designed with precision.</h2>
+          <p class="section-desc" style="margin: 0 auto;">
+            Explore the core views of Automation Hub.
+          </p>
+        </div>
+
+        <div class="showcase-tabs-nav" role="tablist">
+          <button class="showcase-tab-btn active" data-tab="dashboard">Dashboard</button>
+          <button class="showcase-tab-btn" data-tab="editor">Mode Editor</button>
+          <button class="showcase-tab-btn" data-tab="devices">Audio & Devices</button>
+          <button class="showcase-tab-btn" data-tab="activity">Live Activity Log</button>
+        </div>
+
+        <div class="showcase-display">
+          
+          <!-- Tab 1: Dashboard -->
+          <div class="showcase-tab-pane active" id="tab_dashboard">
+            <div class="pane-grid">
+              <div class="pane-info">
+                <h3>Central Mission Control</h3>
+                <p>
+                  A sleek, glassmorphic dark interface presenting your customized Modes, active peripherals, recent execution audit log, and live execution HUD.
+                </p>
+                <ul class="pane-features-list">
+                  <li>One-click mode triggers with animated status indicators</li>
+                  <li>Live peripheral connection tracker for DACs and MIDI keyboards</li>
+                  <li>Instant keyboard shortcut badges with active binding highlights</li>
+                </ul>
+              </div>
+              <div class="pane-mockup">
+                <div style="color: #0a84ff; font-weight: 700; margin-bottom: 8px;">// Dashboard State</div>
+                <div style="color: #64748b;">Active Profile:</div>
+                <div style="color: #ffffff; font-size: 14px; margin-bottom: 12px;">🎸 Guitar Mode (CTRL+ALT+G)</div>
+                <div style="color: #64748b;">Connected Devices:</div>
+                <div style="color: #22c55e;">● Focusrite Scarlett 2i2 USB</div>
+                <div style="color: #22c55e;">● Akai MPK Mini MIDI Controller</div>
+                <div style="color: #22c55e;">● Studio Headphones (Default Output)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Mode Editor -->
+          <div class="showcase-tab-pane" id="tab_editor">
+            <div class="pane-grid">
+              <div class="pane-info">
+                <h3>Visual Action Sequencer</h3>
+                <p>
+                  Build multi-stage automations with granular control. Add processes, audio device assignments, keystrokes, timeouts, and failure fallback policies.
+                </p>
+                <ul class="pane-features-list">
+                  <li>Running Window Selector ("🪟 Select Window...") for effortless targeting</li>
+                  <li>Configurable failure policies: Continue, Stop, or Retry</li>
+                  <li>Precise millisecond delays for smooth asynchronous app launches</li>
+                </ul>
+              </div>
+              <div class="pane-mockup">
+                <div style="color: #0a84ff; font-weight: 700; margin-bottom: 8px;">// Action Sequence: Gaming Mode</div>
+                <div style="color: #94a3b8;">1. [audio.set_output] device="Headphones" (continue)</div>
+                <div style="color: #94a3b8;">2. [process.launch] app="Steam.exe"</div>
+                <div style="color: #94a3b8;">3. [process.launch] app="Discord.exe"</div>
+                <div style="color: #94a3b8;">4. [window.minimize_all]</div>
+                <div style="color: #22c55e;">5. [notification.show] "Gaming setup active"</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 3: Devices -->
+          <div class="showcase-tab-pane" id="tab_devices">
+            <div class="pane-grid">
+              <div class="pane-info">
+                <h3>Hardware Peripheral Hub</h3>
+                <p>
+                  Direct visibility into your audio interfaces, playback speakers, studio monitors, microphones, and USB devices.
+                </p>
+                <ul class="pane-features-list">
+                  <li>Real-time WASAPI endpoint enumeration</li>
+                  <li>Master volume and channel gain balancing</li>
+                  <li>Hotplug detection for connected studio gear</li>
+                </ul>
+              </div>
+              <div class="pane-mockup">
+                <div style="color: #0a84ff; font-weight: 700; margin-bottom: 8px;">// WASAPI Audio Endpoints</div>
+                <div style="color: #ffffff;">[Playback 1] Scarlett 2i2 USB (ID: 0x01) — 80%</div>
+                <div style="color: #ffffff;">[Playback 2] Realtek High Definition Audio — 50%</div>
+                <div style="color: #ffffff;">[Recording 1] Scarlett 2i2 Line In (Active)</div>
+                <div style="color: #22c55e; margin-top: 10px;">Status: All WASAPI COM interfaces initialized</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 4: Activity Log -->
+          <div class="showcase-tab-pane" id="tab_activity">
+            <div class="pane-grid">
+              <div class="pane-info">
+                <h3>Sub-Millisecond Audit Log</h3>
+                <p>
+                  Every executed action is logged with exact timestamps, return codes, execution durations, and descriptive messages in a local SQLite database.
+                </p>
+                <ul class="pane-features-list">
+                  <li>Full execution history searchable by mode name or date</li>
+                  <li>Diagnostic error logs for missing executables or unplugged devices</li>
+                  <li>Local persistence with zero telemetry and 100% offline privacy</li>
+                </ul>
+              </div>
+              <div class="pane-mockup">
+                <div style="color: #0a84ff; font-weight: 700; margin-bottom: 8px;">// Recent SQLite Execution Log</div>
+                <div style="color: #22c55e;">[22:31:30] Guitar Mode -> Notify Ready (0.02s) SUCCESS</div>
+                <div style="color: #22c55e;">[22:31:15] Guitar Mode -> Launch FL Studio (0.02s) PID=27616</div>
+                <div style="color: #22c55e;">[22:31:15] Guitar Mode -> Set Audio Output (1.14s) SUCCESS</div>
+                <div style="color: #22c55e;">[22:30:52] Study Mode  -> Launch Spotify (0.02s) PID=10120</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         DOWNLOAD & FINAL CALL TO ACTION
+         ====================================================================== -->
+    <section class="download-section" id="download">
+      <div class="container">
+        
+        <div class="download-box">
+          <h2 class="download-title">Ready to stop setting up?</h2>
+          <p class="download-subtitle">
+            Download Automation Hub for Windows 11. No complex setup, no installer wizard — just download and launch.
+          </p>
+
+          <div class="download-actions">
+            <a href="https://github.com/Sswastik60/uselessAutomations/releases/download/v2.0.0/AutomationHub.exe" class="btn btn-primary btn-lg" id="bottomDownloadBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.901-1.799"/>
+              </svg>
+              Download for Windows (v2.0.0)
+            </a>
+            <a href="https://github.com/Sswastik60/uselessAutomations" target="_blank" rel="noopener" class="btn btn-secondary btn-lg">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              View on GitHub
+            </a>
+          </div>
+
+          <div class="download-meta">
+            <span>Windows 11 (64-bit)</span> • 
+            <span>Single Portable .exe (~61 MB)</span> • 
+            <span>100% Free & Open Source</span> • 
+            <span>MIT License</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Minimal Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div>
+          <div class="footer-brand">
+            <span>⚡</span> Automation Hub
+          </div>
+          <div class="footer-tagline">
+            One shortcut. Your whole setup, ready.
+          </div>
+        </div>
+
+        <ul class="footer-links">
+          <li><a href="#hero">Product</a></li>
+          <li><a href="#modes">Modes</a></li>
+          <li><a href="#engine">Engine</a></li>
+          <li><a href="https://github.com/Sswastik60/uselessAutomations/releases/tag/v2.0.0" target="_blank" rel="noopener">Releases</a></li>
+          <li><a href="https://github.com/Sswastik60/uselessAutomations" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://github.com/Sswastik60/uselessAutomations/blob/main/mood_creator/docs/actions.md" target="_blank" rel="noopener">Docs</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 Automation Hub. Built for Windows 11. Released under MIT License.</div>
+        <div>No telemetry. Offline by default. Pure desktop performance.</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- App Interaction Script -->
+  <script src="js/app.js"></script>
+</body>
+</html>
