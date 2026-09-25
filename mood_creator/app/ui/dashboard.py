@@ -1,7 +1,7 @@
 """World-Class Main Dashboard View matching the exact reference UI design.
 
 Features:
-- Panoramic twilight dune hero header with personalized greeting ("Good evening, Swastik 👋")
+- Panoramic twilight dune hero header with universal greeting ("Good evening 👋")
 - Pill-shaped command palette search bar with ⌘K badge
 - 6-card Modes section (Guitar, Gaming, Coding, Music Production, Study, Movie) with artwork
 - Bottom 'Less setup. More doing.' mountain banner and 4-tile Quick Actions panel
@@ -63,15 +63,15 @@ class HeroBannerWidget(QFrame):
         layout.setContentsMargins(28, 20, 28, 16)
         layout.setSpacing(6)
 
-        # Dynamic greeting based on time of day
+        # Dynamic universal greeting based on time of day
         hour = datetime.now().hour
         greeting = "Good morning" if hour < 12 else ("Good afternoon" if hour < 18 else "Good evening")
 
-        self.greeting_lbl = QLabel(f"{greeting},")
-        self.greeting_lbl.setStyleSheet("font-size: 13px; font-weight: 500; color: #94a3b8; background: transparent;")
+        self.greeting_lbl = QLabel("Automation Hub")
+        self.greeting_lbl.setStyleSheet("font-size: 12px; font-weight: 600; color: #38bdf8; background: transparent; letter-spacing: 0.8px; text-transform: uppercase;")
         layout.addWidget(self.greeting_lbl)
 
-        self.name_lbl = QLabel("Swastik 👋")
+        self.name_lbl = QLabel(f"{greeting} 👋")
         self.name_lbl.setStyleSheet("font-size: 26px; font-weight: 800; color: #ffffff; background: transparent; letter-spacing: -0.5px;")
         layout.addWidget(self.name_lbl)
 

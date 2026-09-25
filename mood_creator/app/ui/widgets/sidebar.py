@@ -187,9 +187,9 @@ class SidebarWidget(QWidget):
 
         main_layout.addStretch()
 
-        # 3. User Profile Card
-        profile_card = QFrame()
-        profile_card.setStyleSheet(
+        # 3. System Status Card (Universal)
+        status_card = QFrame()
+        status_card.setStyleSheet(
             """
             QFrame {
                 background-color: #08090e;
@@ -197,35 +197,28 @@ class SidebarWidget(QWidget):
                 border-radius: 12px;
                 padding: 4px;
             }
-            QFrame:hover {
-                background-color: #0c0e16;
-                border-color: #1e2230;
-            }
             """
         )
-        profile_layout = QHBoxLayout(profile_card)
-        profile_layout.setContentsMargins(8, 8, 8, 8)
-        profile_layout.setSpacing(10)
+        status_layout = QHBoxLayout(status_card)
+        status_layout.setContentsMargins(10, 8, 10, 8)
+        status_layout.setSpacing(10)
 
-        avatar_orb = AvatarOrbWidget()
+        status_dot = QLabel("●")
+        status_dot.setStyleSheet("color: #22c55e; font-size: 10px; background: transparent;")
 
-        name_box = QVBoxLayout()
-        name_box.setSpacing(1)
-        name_lbl = QLabel("Swastik")
-        name_lbl.setStyleSheet("color: #f8fafc; font-size: 12px; font-weight: 600;")
-        badge_lbl = QLabel("Pro")
-        badge_lbl.setStyleSheet("color: #38bdf8; font-size: 10px; font-weight: 500;")
-        name_box.addWidget(name_lbl)
-        name_box.addWidget(badge_lbl)
+        status_text_box = QVBoxLayout()
+        status_text_box.setSpacing(1)
+        status_title = QLabel("Automation Hub")
+        status_title.setStyleSheet("color: #f8fafc; font-size: 12px; font-weight: 600; background: transparent;")
+        status_sub = QLabel("v2.0.0 • Ready")
+        status_sub.setStyleSheet("color: #64748b; font-size: 10px; font-weight: 500; background: transparent;")
+        status_text_box.addWidget(status_title)
+        status_text_box.addWidget(status_sub)
 
-        chevron_lbl = QLabel("›")
-        chevron_lbl.setStyleSheet("color: #64748b; font-size: 16px; font-weight: bold;")
+        status_layout.addWidget(status_dot)
+        status_layout.addLayout(status_text_box, stretch=1)
 
-        profile_layout.addWidget(avatar_orb)
-        profile_layout.addLayout(name_box, stretch=1)
-        profile_layout.addWidget(chevron_lbl)
-
-        main_layout.addWidget(profile_card)
+        main_layout.addWidget(status_card)
 
         # Select Dashboard (index 0) by default
         self.set_active_page(0)
