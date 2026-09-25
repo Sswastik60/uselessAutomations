@@ -244,11 +244,52 @@ class ToggleFullscreenAction(BaseAction):
             return ActionResult(success=False, message=f"Failed to toggle fullscreen: {e}", error=str(e))
 
 
+class SetWallpaperAction(BaseAction):
+    """Set the Windows desktop background wallpaper."""
+
+    PARAM_SCHEMA = {
+        "image_path": {
+            "type": "string",
+            "label": "Wallpaper Image Path",
+            "required": True,
+            "placeholder": "e.g. C:/Wallpapers/wallpaper.jpg",
+        },
+    }
+
+    def execute(self, context: AutomationContext) -> ActionResult:
+        import ctypes
+        import os
+        from pathlib import Path
+        img = self.params.get("image_path", "")
+        p = Path(img)
+        if not p.is_file():
+            user_bg_dir = Path(os.environ.get("APPDATA", ".")) / "AutomationHub" / "backgrounds"
+            up = user_bg_dir / img
+            if up.is_file():
+                p = up
+            else:
+                return ActionResult(success=False, message=f"Wallpaper image not found: {img}", error="FileNotFound")
+
+        try:
+            SPI_SETDESKWALLPAPER = 20
+            SPIF_UPDATEINIFILE = 1
+            SPIF_SENDCHANGE = 2
+            res = ctypes.windll.user32.SystemParametersInfoW(
+                SPI_SETDESKWALLPAPER, 0, str(p.resolve()), SPIF_UPDATEINIFILE | SPIF_SENDCHANGE
+            )
+            if res:
+                return ActionResult(success=True, message=f"Desktop wallpaper updated to: {p.name}")
+            return ActionResult(success=False, message="SystemParametersInfoW failed to set wallpaper.", error="Win32Error")
+        except Exception as e:
+            return ActionResult(success=False, message=f"Error setting wallpaper: {e}", error=str(e))
+
+
 # Register window actions
 action_registry.register("window.focus", FocusWindowAction, category="Window", display_name="Focus Window")
 action_registry.register("window.minimize", MinimizeWindowAction, category="Window", display_name="Minimize Window")
 action_registry.register("window.maximize", MaximizeWindowAction, category="Window", display_name="Maximize Window")
 action_registry.register("window.fullscreen", ToggleFullscreenAction, category="Window", display_name="Toggle Fullscreen (F11)")
 action_registry.register("window.move", MoveResizeWindowAction, category="Window", display_name="Move / Resize Window")
+action_registry.register("windows.set_wallpaper", SetWallpaperAction, category="Window", display_name="Set Desktop Wallpaper")
 
 

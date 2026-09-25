@@ -807,6 +807,26 @@ class DashboardView(QWidget):
         title_col.addWidget(m_title)
         title_col.addWidget(m_sub)
 
+        new_mode_hdr_btn = QPushButton("＋ New Mode")
+        new_mode_hdr_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        new_mode_hdr_btn.setStyleSheet(
+            """
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0369a1, stop:1 #0284c7);
+                border: 1px solid #38bdf8;
+                border-radius: 12px;
+                color: #ffffff;
+                font-size: 11px;
+                font-weight: 700;
+                padding: 3px 12px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0284c7, stop:1 #38bdf8);
+            }
+            """
+        )
+        new_mode_hdr_btn.clicked.connect(self.create_mode_requested.emit)
+
         view_all_modes_btn = QPushButton("View all →")
         view_all_modes_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         view_all_modes_btn.setStyleSheet(
@@ -824,9 +844,14 @@ class DashboardView(QWidget):
         )
         view_all_modes_btn.clicked.connect(lambda: self.navigate_requested.emit(1))
 
+        hdr_actions = QHBoxLayout()
+        hdr_actions.setSpacing(10)
+        hdr_actions.addWidget(new_mode_hdr_btn)
+        hdr_actions.addWidget(view_all_modes_btn)
+
         modes_header_box.addLayout(title_col)
         modes_header_box.addStretch()
-        modes_header_box.addWidget(view_all_modes_btn)
+        modes_header_box.addLayout(hdr_actions)
         left_layout.addLayout(modes_header_box)
 
         # 3. 2-Row x 3-Column Modes Grid

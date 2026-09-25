@@ -4,6 +4,7 @@ Features atmospheric background photography, gradient fade mask, tactile hover g
 hotkey pill badge, and bottom-right circular execution arrow.
 """
 
+import os
 from pathlib import Path
 from typing import Optional
 from PySide6.QtCore import Property, QEasingCurve, QPoint, QPropertyAnimation, QRect, QRectF, Qt, Signal
@@ -214,20 +215,54 @@ class ModeCard(QFrame):
         return hk
 
     def _load_artwork(self) -> None:
-        m_id = self.mode.id.lower()
-        filename = None
-        for key, fname in self.ARTWORK_MAP.items():
-            if key in m_id:
-                filename = fname
-                break
+        self.bg_pixmap = None
+        app_dir = Path(__file__).resolve().parent.parent.parent.parent
+        assets_dir = app_dir / "assets" / "ui"
+        user_bg_dir = Path(os.environ.get("APPDATA", ".")) / "AutomationHub" / "backgrounds"
 
-        if filename:
-            app_dir = Path(__file__).resolve().parent.parent.parent.parent
-            art_path = app_dir / "assets" / "ui" / filename
-            if art_path.exists():
-                pix = QPixmap(str(art_path))
+        # 1. Custom background explicitly configured on the mode
+        bg = getattr(self.mode, "background", None)
+        if bg:
+            # Check direct file path
+            p = Path(bg)
+            if p.is_file():
+                pix = QPixmap(str(p))
                 if not pix.isNull():
                     self.bg_pixmap = pix
+                    return
+            # Check user background storage
+            up = user_bg_dir / bg
+            if up.is_file():
+                pix = QPixmap(str(up))
+                if not pix.isNull():
+                    self.bg_pixmap = pix
+                    return
+            # Check bundled assets/ui
+            ap = assets_dir / bg
+            if ap.is_file():
+                pix = QPixmap(str(ap))
+                if not pix.isNull():
+                    self.bg_pixmap = pix
+                    return
+
+        # 2. Check keyword matching against ARTWORK_MAP
+        m_id = self.mode.id.lower()
+        m_name = self.mode.name.lower()
+        for key, fname in self.ARTWORK_MAP.items():
+            if key in m_id or key in m_name:
+                art_path = assets_dir / fname
+                if art_path.exists():
+                    pix = QPixmap(str(art_path))
+                    if not pix.isNull():
+                        self.bg_pixmap = pix
+                        return
+
+        # 3. Clean default fallback for custom user modes
+        default_art = assets_dir / "hero_dunes.jpg"
+        if default_art.exists():
+            pix = QPixmap(str(default_art))
+            if not pix.isNull():
+                self.bg_pixmap = pix
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)

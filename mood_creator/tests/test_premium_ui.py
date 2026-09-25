@@ -114,3 +114,67 @@ def test_smooth_stacked_widget(qapp):
     stacked.set_current_index_smooth(0, reduce_motion=True)
     assert stacked.currentIndex() == 0
 
+
+def test_mode_card_background_artwork(qapp):
+    from app.ui.widgets.mode_card import ModeCard
+    
+    # 1. Mode with explicit background preset
+    mode_dunes = Mode(
+        id="asm_mode",
+        name="ASM Mode",
+        description="Low level assembly",
+        icon="💻",
+        background="hero_dunes.jpg",
+        actions=[]
+    )
+    card1 = ModeCard(mode_dunes)
+    assert card1.bg_pixmap is not None
+    assert not card1.bg_pixmap.isNull()
+
+    # 2. Mode with keyword fallback
+    mode_guitar = Mode(
+        id="guitar_mode",
+        name="Guitar Practice",
+        actions=[]
+    )
+    card2 = ModeCard(mode_guitar)
+    assert card2.bg_pixmap is not None
+    assert not card2.bg_pixmap.isNull()
+
+
+def test_mode_editor_create_new_mode(qapp):
+    from app.ui.mode_editor import ModeEditorView
+
+    editor = ModeEditorView()
+    editor.set_available_modes([
+        Mode(id="coding_mode", name="Coding Mode", actions=[]),
+        Mode(id="gaming_mode", name="Gaming Mode", actions=[]),
+    ])
+
+    # Initiate create new mode
+    editor.load_mode(None)
+    assert editor.is_new_mode is True
+    assert editor.current_mode_id is None
+    assert editor.id_input.isEnabled() is True
+
+    # Type new name
+    editor.name_input.setText("ASM Mode")
+    assert editor.id_input.text() == "asm_mode"
+
+    # Select background preset
+    editor._select_bg_preset("banner_mountain.jpg", None, "🏔 Mountain")
+    assert editor.current_background == "banner_mountain.jpg"
+    assert editor.preview_card.banner_pixmap is not None
+
+    # Test saving
+    emitted_modes = []
+    editor.save_requested.connect(emitted_modes.append)
+    editor._on_save_clicked()
+
+    assert len(emitted_modes) == 1
+    new_m = emitted_modes[0]
+    assert new_m.id == "asm_mode"
+    assert new_m.name == "ASM Mode"
+    assert new_m.background == "banner_mountain.jpg"
+
+

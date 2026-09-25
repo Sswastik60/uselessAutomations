@@ -11,6 +11,7 @@ class Mode(BaseModel):
     name: str = Field(..., description="Display name for the mode")
     description: str = Field("", description="Detailed explanation of what the mode does")
     icon: str = Field("⚡", description="Emoji or icon identifier")
+    background: Optional[str] = Field(None, description="Background artwork preset name, asset filename, or custom image file path")
     hotkey: Optional[str] = Field(None, description="Global hotkey shortcut, e.g. CTRL+ALT+G")
     enabled: bool = Field(True, description="Whether this mode is active and triggerable")
     actions: list[ActionConfig] = Field(default_factory=list, description="Sequence of actions to execute")

@@ -230,6 +230,7 @@ class MainWindow(QMainWindow):
     def refresh_dashboard(self) -> None:
         modes = self.mode_manager.get_all_modes()
         self.dashboard_view.update_modes(modes)
+        self.mode_editor_view.set_available_modes(modes)
         self._rebuild_tray_modes_menu()
         self._update_system_status()
 
@@ -303,14 +304,14 @@ class MainWindow(QMainWindow):
             mode = self.mode_manager.get_mode(mode_id)
             self.mode_editor_view.load_mode(mode)
             self.sidebar.set_active_page(1)
-            self._on_page_changed(1)
+            self.stacked_widget.set_current_index_smooth(1, reduce_motion=AnimationManager.reduce_motion)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Could not load mode for editing: {e}")
 
     def create_mode(self) -> None:
         self.mode_editor_view.load_mode(None)
         self.sidebar.set_active_page(1)
-        self._on_page_changed(1)
+        self.stacked_widget.set_current_index_smooth(1, reduce_motion=AnimationManager.reduce_motion)
 
     def export_mode(self, mode_id: str) -> None:
         try:
@@ -435,7 +436,7 @@ class MainWindow(QMainWindow):
         self.stacked_widget.set_current_index_smooth(index, reduce_motion=AnimationManager.reduce_motion)
 
         if index == 1:
-            if not self.mode_editor_view.current_mode_id:
+            if not self.mode_editor_view.current_mode_id and not getattr(self.mode_editor_view, "is_new_mode", False):
                 modes = self.mode_manager.get_all_modes()
                 if modes:
                     self.mode_editor_view.load_mode(modes[0])

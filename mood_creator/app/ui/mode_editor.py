@@ -11,6 +11,9 @@ Features:
 - High-fidelity typography (Segoe UI Variable), subtle depth, and smooth animations
 """
 
+import os
+import re
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -29,7 +32,10 @@ from PySide6.QtGui import (
     QRadialGradient,
 )
 from PySide6.QtWidgets import (
+    QComboBox,
+    QFileDialog,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -303,12 +309,7 @@ class LivePreviewCard(QFrame):
 
         # Load banner artwork
         self.banner_pixmap: Optional[QPixmap] = None
-        app_dir = Path(__file__).resolve().parent.parent.parent
-        img_path = app_dir / "assets" / "ui" / "banner_mountain.jpg"
-        if not img_path.exists():
-            img_path = app_dir / "assets" / "ui" / "mode_coding.jpg"
-        if img_path.exists():
-            self.banner_pixmap = QPixmap(str(img_path))
+        self.set_background("banner_mountain.jpg")
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 12, 16, 14)
@@ -425,6 +426,44 @@ class LivePreviewCard(QFrame):
         bot_row.addWidget(self.play_btn)
         layout.addLayout(bot_row)
 
+    def set_background(self, bg_val: Optional[str]) -> None:
+        """Dynamically update preview card background artwork."""
+        self.banner_pixmap = None
+        app_dir = Path(__file__).resolve().parent.parent.parent
+        assets_dir = app_dir / "assets" / "ui"
+        user_bg_dir = Path(os.environ.get("APPDATA", ".")) / "AutomationHub" / "backgrounds"
+
+        if bg_val:
+            p = Path(bg_val)
+            if p.is_file():
+                pix = QPixmap(str(p))
+                if not pix.isNull():
+                    self.banner_pixmap = pix
+                    self.update()
+                    return
+            up = user_bg_dir / bg_val
+            if up.is_file():
+                pix = QPixmap(str(up))
+                if not pix.isNull():
+                    self.banner_pixmap = pix
+                    self.update()
+                    return
+            ap = assets_dir / bg_val
+            if ap.is_file():
+                pix = QPixmap(str(ap))
+                if not pix.isNull():
+                    self.banner_pixmap = pix
+                    self.update()
+                    return
+
+        # Fallback default banner
+        default_art = assets_dir / "banner_mountain.jpg"
+        if not default_art.exists():
+            default_art = assets_dir / "hero_dunes.jpg"
+        if default_art.exists():
+            self.banner_pixmap = QPixmap(str(default_art))
+        self.update()
+
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -485,6 +524,9 @@ class ModeEditorView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.current_mode_id: Optional[str] = None
+        self.is_new_mode: bool = False
+        self.current_background: Optional[str] = "hero_dunes.jpg"
+        self.available_modes: List[Mode] = []
         self.actions_list: List[ActionConfig] = []
         self.current_icon = "</>"
         self.selected_preset_btn: Optional[QPushButton] = None
@@ -513,11 +555,14 @@ class ModeEditorView(QWidget):
         top_bar.setContentsMargins(0, 0, 0, 0)
         top_bar.setSpacing(14)
 
-        # Left: Back button + Mode Header Title & Subtitle
+        # Left: Back button + Mode Switcher + Title & Subtitle
         header_left = QVBoxLayout()
-        header_left.setSpacing(3)
+        header_left.setSpacing(4)
 
-        self.back_btn = QPushButton("← Back to Modes")
+        nav_row = QHBoxLayout()
+        nav_row.setSpacing(10)
+
+        self.back_btn = QPushButton("← Dashboard")
         self.back_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.back_btn.setStyleSheet(
             """
@@ -529,7 +574,7 @@ class ModeEditorView(QWidget):
                 font-size: 11px;
                 font-weight: 500;
                 padding: 3px 10px;
-                max-width: 120px;
+                max-width: 110px;
             }
             QPushButton:hover {
                 background-color: #121724;
@@ -539,7 +584,68 @@ class ModeEditorView(QWidget):
             """
         )
         self.back_btn.clicked.connect(self.cancelled.emit)
-        header_left.addWidget(self.back_btn)
+        nav_row.addWidget(self.back_btn)
+
+        # Mode Selector Dropdown
+        self.mode_selector = QComboBox()
+        self.mode_selector.setFixedHeight(28)
+        self.mode_selector.setMinimumWidth(180)
+        self.mode_selector.setStyleSheet(
+            """
+            QComboBox {
+                background-color: #0b0f19;
+                border: 1px solid #1a2337;
+                border-radius: 12px;
+                color: #cbd5e1;
+                font-size: 11px;
+                font-weight: 600;
+                padding: 2px 10px;
+            }
+            QComboBox:hover {
+                border-color: #2b3952;
+                background-color: #101625;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 18px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #0c1220;
+                color: #f8fafc;
+                border: 1px solid #1e2a42;
+                selection-background-color: #0284c7;
+                padding: 4px;
+            }
+            """
+        )
+        self.mode_selector.currentIndexChanged.connect(self._on_mode_selector_changed)
+        nav_row.addWidget(self.mode_selector)
+
+        # + New Mode Button in Top Bar
+        self.new_mode_btn = QPushButton("＋ New Mode")
+        self.new_mode_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.new_mode_btn.setFixedHeight(28)
+        self.new_mode_btn.setStyleSheet(
+            """
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0369a1, stop:1 #0284c7);
+                border: 1px solid #38bdf8;
+                border-radius: 12px;
+                color: #ffffff;
+                font-size: 11px;
+                font-weight: 700;
+                padding: 2px 12px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0284c7, stop:1 #38bdf8);
+            }
+            """
+        )
+        self.new_mode_btn.clicked.connect(lambda: self.load_mode(None))
+        nav_row.addWidget(self.new_mode_btn)
+        nav_row.addStretch()
+
+        header_left.addLayout(nav_row)
 
         self.header_title = QLabel("Edit Mode: Coding Mode")
         self.header_title.setStyleSheet(
@@ -1002,6 +1108,129 @@ class ModeEditorView(QWidget):
         self.preview_card.play_clicked.connect(self._on_test_clicked)
         right_col.addWidget(self.preview_card)
 
+        # -------------------------------------------------------------
+        # Card Background Artwork (Home Screen)
+        # -------------------------------------------------------------
+        bg_section = QFrame()
+        bg_section.setStyleSheet(
+            """
+            QFrame {
+                background-color: #080b14;
+                border: 1px solid #161c2b;
+                border-radius: 12px;
+            }
+            """
+        )
+        bg_layout = QVBoxLayout(bg_section)
+        bg_layout.setContentsMargins(12, 10, 12, 10)
+        bg_layout.setSpacing(8)
+
+        bg_header_box = QHBoxLayout()
+        bg_title = QLabel("🖼  Card Background Artwork")
+        bg_title.setStyleSheet("font-size: 13px; font-weight: 700; color: #f8fafc; background: transparent;")
+        bg_header_box.addWidget(bg_title)
+        bg_header_box.addStretch()
+
+        self.bg_status_badge = QLabel("Dunes")
+        self.bg_status_badge.setStyleSheet(
+            """
+            background-color: #0c1c30;
+            color: #38bdf8;
+            border: 1px solid #0284c7;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            """
+        )
+        bg_header_box.addWidget(self.bg_status_badge)
+        bg_layout.addLayout(bg_header_box)
+
+        bg_desc = QLabel("Home screen card background for this mode:")
+        bg_desc.setStyleSheet("font-size: 11px; color: #64748b; background: transparent;")
+        bg_layout.addWidget(bg_desc)
+
+        # Preset grid (2 rows of 4 pills)
+        presets_grid = QGridLayout()
+        presets_grid.setSpacing(6)
+
+        self.bg_preset_buttons = []
+        PRESETS = [
+            ("🌄 Dunes", "hero_dunes.jpg", 0, 0),
+            ("🏔 Mountain", "banner_mountain.jpg", 0, 1),
+            ("💻 Coding", "mode_coding.jpg", 0, 2),
+            ("🎮 Gaming", "mode_gaming.jpg", 0, 3),
+            ("🎸 Guitar", "mode_guitar.jpg", 1, 0),
+            ("🎵 Synth", "mode_music.jpg", 1, 1),
+            ("📚 Study", "mode_study.jpg", 1, 2),
+            ("🎬 Cinema", "mode_movie.jpg", 1, 3),
+        ]
+
+        for label, fname, r, c in PRESETS:
+            p_btn = QPushButton(label)
+            p_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            p_btn.setFixedHeight(28)
+            p_btn.setStyleSheet(self._get_bg_preset_style(fname == "hero_dunes.jpg"))
+            p_btn.clicked.connect(lambda _, f=fname, b=p_btn, l=label: self._select_bg_preset(f, b, l))
+            presets_grid.addWidget(p_btn, r, c)
+            self.bg_preset_buttons.append((fname, p_btn, label))
+
+        bg_layout.addLayout(presets_grid)
+
+        # Custom image upload button + Reset button
+        custom_row = QHBoxLayout()
+        custom_row.setSpacing(8)
+
+        self.upload_bg_btn = QPushButton("📁 Choose Custom Image...")
+        self.upload_bg_btn.setFixedHeight(30)
+        self.upload_bg_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.upload_bg_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #0c1424;
+                border: 1px solid #1e2e48;
+                border-radius: 6px;
+                color: #e2e8f0;
+                font-size: 11px;
+                font-weight: 600;
+                padding: 4px 10px;
+            }
+            QPushButton:hover {
+                background-color: #14223c;
+                border-color: #38bdf8;
+                color: #ffffff;
+            }
+            """
+        )
+        self.upload_bg_btn.clicked.connect(self._on_choose_custom_background)
+        custom_row.addWidget(self.upload_bg_btn, stretch=1)
+
+        self.clear_bg_btn = QPushButton("Reset")
+        self.clear_bg_btn.setFixedHeight(30)
+        self.clear_bg_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.clear_bg_btn.setToolTip("Reset to Default Dunes Artwork")
+        self.clear_bg_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: transparent;
+                border: 1px solid #222d44;
+                border-radius: 6px;
+                color: #64748b;
+                font-size: 11px;
+                padding: 4px 10px;
+            }
+            QPushButton:hover {
+                color: #f8fafc;
+                border-color: #334155;
+            }
+            """
+        )
+        self.clear_bg_btn.clicked.connect(lambda: self._select_bg_preset("hero_dunes.jpg", None, "🌄 Dunes"))
+        custom_row.addWidget(self.clear_bg_btn)
+
+        bg_layout.addLayout(custom_row)
+        right_col.addWidget(bg_section)
+
         # Quick Actions Header
         qa_lbl = QLabel("Quick Actions")
         qa_lbl.setStyleSheet("font-size: 13px; font-weight: 600; color: #cbd5e1; margin-top: 4px; background: transparent;")
@@ -1179,15 +1408,115 @@ class ModeEditorView(QWidget):
         # Initialize preset button styling
         self._select_icon_preset("</>", self.preset_btns[0])
 
+    def _get_bg_preset_style(self, is_selected: bool) -> str:
+        if is_selected:
+            return """
+            QPushButton {
+                background-color: #0d2847;
+                border: 1.5px solid #38bdf8;
+                border-radius: 6px;
+                color: #ffffff;
+                font-size: 10px;
+                font-weight: 700;
+            }
+            """
+        return """
+        QPushButton {
+            background-color: #0b0f19;
+            border: 1px solid #1a2234;
+            border-radius: 6px;
+            color: #94a3b8;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        QPushButton:hover {
+            background-color: #121928;
+            border-color: #2b3952;
+            color: #f8fafc;
+        }
+        """
+
+    def _select_bg_preset(self, fname: str, target_btn: Optional[QPushButton], label: str) -> None:
+        self.current_background = fname
+        clean_lbl = label.split()[-1] if label else fname
+        self.bg_status_badge.setText(clean_lbl)
+        self.preview_card.set_background(fname)
+
+        for f, btn, l in getattr(self, "bg_preset_buttons", []):
+            btn.setStyleSheet(self._get_bg_preset_style(btn == target_btn or f == fname))
+
+    def _on_choose_custom_background(self) -> None:
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Home Screen Mode Artwork",
+            "",
+            "Images (*.png *.jpg *.jpeg *.webp *.bmp);;All Files (*.*)"
+        )
+        if file_path:
+            user_bg_dir = Path(os.environ.get("APPDATA", ".")) / "AutomationHub" / "backgrounds"
+            user_bg_dir.mkdir(parents=True, exist_ok=True)
+            src_path = Path(file_path)
+            dest_path = user_bg_dir / src_path.name
+            try:
+                shutil.copy2(src_path, dest_path)
+                saved_ref = str(dest_path)
+            except Exception:
+                saved_ref = str(src_path)
+
+            self.current_background = saved_ref
+            short_name = src_path.name if len(src_path.name) <= 12 else f"{src_path.name[:10]}.."
+            self.bg_status_badge.setText(f"Custom ({short_name})")
+            self.preview_card.set_background(saved_ref)
+
+            for f, btn, l in getattr(self, "bg_preset_buttons", []):
+                btn.setStyleSheet(self._get_bg_preset_style(False))
+
+    def set_available_modes(self, modes: List[Mode]) -> None:
+        """Update available modes dropdown list."""
+        self.available_modes = list(modes)
+        self._sync_mode_selector()
+
+    def _sync_mode_selector(self) -> None:
+        if not hasattr(self, "mode_selector"):
+            return
+        self.mode_selector.blockSignals(True)
+        self.mode_selector.clear()
+        
+        self.mode_selector.addItem("➕ Create New Mode...", userData="__new__")
+        
+        selected_idx = 0
+        for idx, m in enumerate(self.available_modes):
+            display = f"{m.icon}  {m.name}"
+            self.mode_selector.addItem(display, userData=m.id)
+            if self.current_mode_id and m.id == self.current_mode_id and not self.is_new_mode:
+                selected_idx = idx + 1
+
+        if self.is_new_mode:
+            self.mode_selector.setCurrentIndex(0)
+        else:
+            self.mode_selector.setCurrentIndex(selected_idx)
+        self.mode_selector.blockSignals(False)
+
+    def _on_mode_selector_changed(self, index: int) -> None:
+        data = self.mode_selector.currentData()
+        if data == "__new__":
+            self.load_mode(None)
+        elif data:
+            for m in self.available_modes:
+                if m.id == data:
+                    self.load_mode(m)
+                    break
+
     # -----------------------------------------------------------------
     # State & Load Methods
     # -----------------------------------------------------------------
     def load_mode(self, mode: Optional[Mode] = None) -> None:
         """Load mode into the redesigned editor."""
         if mode:
+            self.is_new_mode = False
             self.current_mode_id = mode.id
             self.header_title.setText(f"Edit Mode: {mode.name}")
-            self.header_sub.setText(mode.description or "Launch editor, open terminal, and set up workspace.")
+            self.header_sub.setText(mode.description or "Automate actions, windows, and apps.")
             self.id_input.setText(mode.id)
             self.id_input.setEnabled(False)
             self.name_input.setText(mode.name)
@@ -1213,10 +1542,30 @@ class ModeEditorView(QWidget):
             hotkey_str = mode.hotkey or ""
             self.hotkey_widget.setText(hotkey_str)
             self._update_hotkey_display(hotkey_str)
+
+            # Background Artwork
+            bg = getattr(mode, "background", None)
+            if not bg:
+                from app.ui.widgets.mode_card import ModeCard
+                m_id = mode.id.lower()
+                m_name = mode.name.lower()
+                for key, fname in ModeCard.ARTWORK_MAP.items():
+                    if key in m_id or key in m_name:
+                        bg = fname
+                        break
+            if not bg:
+                bg = "hero_dunes.jpg"
+            self.current_background = bg
+            self.preview_card.set_background(bg)
+            clean_badge = Path(bg).stem.replace("mode_", "").replace("hero_", "").replace("banner_", "").capitalize()
+            self.bg_status_badge.setText(clean_badge)
+            for f, btn, l in getattr(self, "bg_preset_buttons", []):
+                btn.setStyleSheet(self._get_bg_preset_style(f == bg))
         else:
+            self.is_new_mode = True
             self.current_mode_id = None
             self.header_title.setText("Create New Mode")
-            self.header_sub.setText("Define mode name, trigger hotkey, and automation workflow.")
+            self.header_sub.setText("Define mode name, background artwork, trigger hotkey, and automation workflow.")
             self.id_input.setText("")
             self.id_input.setEnabled(True)
             self.name_input.setText("")
@@ -1228,7 +1577,15 @@ class ModeEditorView(QWidget):
             self.actions_list = []
             self.del_btn.setVisible(False)
             self.qa_export_btn.setVisible(False)
+            self.current_background = "hero_dunes.jpg"
+            self.preview_card.set_background(self.current_background)
+            self.bg_status_badge.setText("Dunes")
+            for f, btn, l in getattr(self, "bg_preset_buttons", []):
+                btn.setStyleSheet(self._get_bg_preset_style(f == "hero_dunes.jpg"))
+            self.preview_card.title_lbl.setText("New Mode")
+            self.preview_card.desc_lbl.setText("Define actions and steps...")
 
+        self._sync_mode_selector()
         self.st_updated.setText(f"Last updated: Today, {datetime.now().strftime('%I:%M %p')}")
         self.refresh_actions_list()
 
@@ -1299,7 +1656,14 @@ class ModeEditorView(QWidget):
     # -----------------------------------------------------------------
     def _on_name_changed(self, text: str) -> None:
         display = text.strip() or "Mode Name"
-        self.header_title.setText(f"Edit Mode: {display}")
+        if self.is_new_mode:
+            self.header_title.setText(f"Create Mode: {display}")
+            slug = re.sub(r"[^a-zA-Z0-9_]", "", text.strip().lower().replace(" ", "_").replace("-", "_"))
+            if slug and not slug.endswith("_mode"):
+                slug += "_mode"
+            self.id_input.setText(slug)
+        else:
+            self.header_title.setText(f"Edit Mode: {display}")
         self.preview_card.title_lbl.setText(display)
 
     def _on_desc_changed(self, text: str) -> None:
@@ -1443,17 +1807,8 @@ class ModeEditorView(QWidget):
     # Primary CTA Handlers: Save, Test, Export, Delete
     # -----------------------------------------------------------------
     def _on_save_clicked(self) -> None:
-        mode_id = self.id_input.text().strip()
         name = self.name_input.text().strip()
-
-        if not mode_id and not self.current_mode_id:
-            mode_id = name.lower().replace(" ", "_").replace("-", "_")
-            mode_id = "".join(c for c in mode_id if c.isalnum() or c == "_")
-
-        if not mode_id:
-            mode_id = self.current_mode_id or ""
-
-        if not mode_id or not name:
+        if not name:
             QMessageBox.warning(self, "Validation Error", "Display Name is required to save the Mode.")
             return
 
@@ -1465,18 +1820,39 @@ class ModeEditorView(QWidget):
                     icon_to_save = f"app:{act.params.get('application')}"
                     break
 
+        if self.is_new_mode:
+            user_id = self.id_input.text().strip()
+            if not user_id:
+                slug = re.sub(r"[^a-zA-Z0-9_]", "", name.lower().replace(" ", "_").replace("-", "_"))
+                if not slug:
+                    slug = "custom_mode"
+                user_id = f"{slug}_mode" if not slug.endswith("_mode") else slug
+
+            # Prevent colliding with any existing mode (defaults or user modes)
+            existing_ids = {m.id for m in self.available_modes}
+            final_id = user_id
+            counter = 1
+            while final_id in existing_ids:
+                final_id = f"{user_id}_{counter}"
+                counter += 1
+        else:
+            final_id = self.current_mode_id or self.id_input.text().strip() or "mode"
+
         mode = Mode(
             schema_version=1,
-            id=mode_id,
+            id=final_id,
             name=name,
             description=self.desc_input.text().strip(),
             icon=icon_to_save,
+            background=self.current_background,
             hotkey=self.hotkey_widget.text() or None,
             enabled=True,
             actions=self.actions_list,
         )
 
         self.st_updated.setText(f"Last updated: Today, {datetime.now().strftime('%I:%M %p')}")
+        self.is_new_mode = False
+        self.current_mode_id = mode.id
         self.save_requested.emit(mode)
 
     def _on_test_clicked(self) -> None:

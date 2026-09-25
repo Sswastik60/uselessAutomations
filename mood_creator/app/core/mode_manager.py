@@ -23,26 +23,75 @@ class ModeManager:
         self.reload_all_modes()
 
     def reload_all_modes(self) -> None:
-        """Load modes from storage directory and default modes directory."""
+        """Load modes from default directory and user storage directory, auto-migrating collided user modes."""
         self._modes.clear()
 
-        # 1. Load built-in default modes if user directory is empty
+        # 1. Load built-in default modes first
+        default_modes: Dict[str, Mode] = {}
         if self.default_modes_dir and self.default_modes_dir.exists():
             for file_path in self.default_modes_dir.glob("*.json"):
                 try:
                     mode = self._load_mode_file(file_path)
-                    if mode.id not in self._modes:
-                        self._modes[mode.id] = mode
+                    default_modes[mode.id] = mode
                 except Exception as e:
                     logger.warning(f"Failed to load default mode from {file_path}: {e}")
 
-        # 2. Load user modes from storage directory (overrides defaults)
+        for m_id, m in default_modes.items():
+            self._modes[m_id] = m
+
+        # 2. Load user modes from storage directory
         for file_path in self.storage_dir.glob("*.json"):
             try:
                 mode = self._load_mode_file(file_path)
+                
+                # Check for accidental overwrite of default mode with a different user custom mode
+                if mode.id in default_modes:
+                    def_mode = default_modes[mode.id]
+                    # If the name is completely different (e.g. user created VALORANT or ASM and it saved as coding_mode)
+                    if mode.name.strip().lower() != def_mode.name.strip().lower():
+                        import re
+                        slug = re.sub(r"[^a-zA-Z0-9_]", "", mode.name.strip().lower().replace(" ", "_").replace("-", "_"))
+                        new_id = f"{slug}_mode" if not slug.endswith("_mode") else slug
+                        logger.info(f"Auto-migrating collided user mode '{mode.name}' from {mode.id} to {new_id}")
+                        mode.id = new_id
+                        # Write migrated user mode to its own file
+                        new_file_path = self.storage_dir / f"{new_id}.json"
+                        with open(new_file_path, "w", encoding="utf-8") as f:
+                            json.dump(mode.model_dump(mode="json"), f, indent=4)
+                        # Remove conflicting file so default mode is restored
+                        try:
+                            file_path.unlink()
+                        except Exception:
+                            pass
+                        self._modes[new_id] = mode
+                        continue
+
                 self._modes[mode.id] = mode
             except Exception as e:
                 logger.error(f"Failed to load user mode from {file_path}: {e}")
+
+    def generate_unique_mode_id(self, name: str, base_id: Optional[str] = None) -> str:
+        """Generate a sanitized, unique mode ID that does not collide with existing modes."""
+        import re
+        if base_id and base_id.strip():
+            slug = re.sub(r"[^a-zA-Z0-9_]", "", base_id.strip().lower().replace(" ", "_").replace("-", "_"))
+        else:
+            slug = re.sub(r"[^a-zA-Z0-9_]", "", name.strip().lower().replace(" ", "_").replace("-", "_"))
+        
+        if not slug:
+            slug = "custom_mode"
+        if not slug.endswith("_mode") and not any(k in slug for k in ["_mode", "mode_"]):
+            candidate = f"{slug}_mode"
+        else:
+            candidate = slug
+            
+        if candidate not in self._modes:
+            return candidate
+            
+        counter = 1
+        while f"{candidate}_{counter}" in self._modes:
+            counter += 1
+        return f"{candidate}_{counter}"
 
     def _load_mode_file(self, path: Path) -> Mode:
         """Parse and validate a mode JSON file."""
