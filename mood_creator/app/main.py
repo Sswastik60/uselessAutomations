@@ -71,6 +71,7 @@ def main() -> None:
     )
 
     app = QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(False)
     app.setApplicationName("Windows 11 Automation Hub")
     app.setOrganizationName("AutomationHub")
 

@@ -1,6 +1,6 @@
-# ⚡ Windows 11 Automation Hub (Mood Creator) — Beta Version 2.0
+# ⚡ Windows 11 Automation Hub (Mood Creator) — Version 2.0
 
-[![Version](https://img.shields.io/badge/version-2.0--beta-blueviolet.svg)](https://github.com/Sswastik60/uselessAutomations)
+[![Version](https://img.shields.io/badge/version-2.0.0-blueviolet.svg)](https://github.com/Sswastik60/uselessAutomations)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%2011-0078d4.svg)](https://microsoft.com/windows)
 
@@ -12,11 +12,15 @@ The core idea:
 
 ---
 
-## 🌟 What's New in Beta Version 2.0
+## 🌟 What's New in Version 2.0
 
+* **Robust Multi-Strategy Window Control**: Auto-polling window resolver that monitors for newly launched application handles across Windows desktop stations, matching both window titles and executable process names (e.g. `vlc`, `brave`, `chrome`, `notepad`).
+* **Hardware Scan Code Keyboard Simulation**: Function keys (like `F11` for full screen), navigation keys, and Windows Key (`WIN`/`SUPER`) combinations simulated with genuine hardware scan codes (`MapVirtualKey`) and window pre-focusing.
+* **Interactive Window Picker**: Action Editor now includes a **"🪟 Select Window..."** helper that enumerates active desktop windows in real-time.
+* **Dedicated Browser & Fullscreen Actions**: First-class `browser.open_url` and `window.fullscreen` actions for one-click browser automations and fullscreen toggling.
 * **AMOLED True-Black Theme**: Designed with an ultra-sleek `#000000` / `#040405` / `#09090b` palette, subtle 1px border glows, fluid hover physics, and zero-distraction focus.
-* **Non-Blocking HUD Overlay & Toasts**: Long-running automations and mode transitions no longer lock up your window with modal dialogs. Enjoy an ambient floating HUD overlay and sleek corner toast notifications.
-* **Self-Healing Windows Shortcuts**: Intelligent shortcut resolver automatically detects version changes in auto-updating apps (e.g., Discord `app-1.0.9259`), resolves broken targets, and dynamically heals `.lnk` files on the fly.
+* **Non-Blocking HUD Overlay & Toasts**: Ambient floating HUD overlay and sleek corner toast notifications displayed above the taskbar even when minimized to the system tray.
+* **Self-Healing Windows Shortcuts**: Intelligent shortcut resolver automatically detects version changes in auto-updating apps (e.g., Discord `app-1.0.xxxx`), resolves broken targets, and dynamically heals `.lnk` files on the fly.
 * **Multi-Directory App Picker**: Effortlessly browse and attach executables from `DEDICATED_MODES`, system directories, Start Menu, or custom paths with instant file validation.
 * **Command Palette (`Ctrl+K` / `⌘K`)**: Instant fuzzy search across all modes, action controls, and application settings.
 * **Graceful Single-Instance IPC**: Clean application termination on window close with local socket communication to prevent orphaned background processes.

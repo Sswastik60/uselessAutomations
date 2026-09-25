@@ -25,10 +25,20 @@ class LaunchProcessAction(BaseAction):
         if not application:
             return ActionResult(success=False, message="No application path specified", error="Missing parameter 'application'")
 
+        # Ensure arguments are formatted as a List[str]
+        if isinstance(arguments, str):
+            import shlex
+            arguments = shlex.split(arguments, posix=False) if arguments.strip() else []
+        elif not isinstance(arguments, list):
+            arguments = [str(arguments)]
+
         # If application is a protocol URI (e.g. steam://run/730 or discord://)
         if "://" in application:
             try:
                 os.startfile(application)
+                context.set_variable("last_launched_name", application.split("://")[0])
+                context.set_variable("last_launched_path", application)
+                context.set_variable("last_launched_app", application)
                 return ActionResult(success=True, message=f"Launched URI protocol '{application}'")
             except Exception as e:
                 return ActionResult(success=False, message=f"Failed to launch URI '{application}'", error=str(e))
@@ -56,6 +66,9 @@ class LaunchProcessAction(BaseAction):
         if app_path and app_path.lower().endswith(".lnk") and os.path.exists(app_path):
             try:
                 os.startfile(app_path)
+                context.set_variable("last_launched_name", os.path.basename(app_path).removesuffix(".lnk"))
+                context.set_variable("last_launched_path", app_path)
+                context.set_variable("last_launched_app", application)
                 return ActionResult(
                     success=True,
                     message=f"Launched shortcut '{os.path.basename(app_path)}'",
@@ -82,6 +95,9 @@ class LaunchProcessAction(BaseAction):
             if app_lower in protocols:
                 try:
                     os.startfile(protocols[app_lower])
+                    context.set_variable("last_launched_name", app_lower)
+                    context.set_variable("last_launched_path", protocols[app_lower])
+                    context.set_variable("last_launched_app", application)
                     return ActionResult(success=True, message=f"Launched {application} via system protocol handler ({protocols[app_lower]}).")
                 except Exception as e:
                     logger.warning(f"Protocol fallback failed for {application}: {e}")
@@ -96,6 +112,10 @@ class LaunchProcessAction(BaseAction):
             proc = ProcessManager.launch_process(app_path, arguments, working_dir)
             pid = proc.pid if proc else None
             pid_str = f" (PID={pid})" if pid else ""
+            context.set_variable("last_launched_pid", pid)
+            context.set_variable("last_launched_name", os.path.basename(app_path))
+            context.set_variable("last_launched_path", app_path)
+            context.set_variable("last_launched_app", application)
             return ActionResult(
                 success=True,
                 message=f"Launched '{os.path.basename(app_path)}'{pid_str}",

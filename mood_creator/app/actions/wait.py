@@ -28,10 +28,16 @@ class WaitDurationAction(BaseAction):
 
 
 class WaitForWindowAction(BaseAction):
-    """Wait until a window matching title_substring appears."""
+    """Wait until a window matching title or application appears."""
 
     PARAM_SCHEMA = {
-        "title": {"type": "string", "label": "Window Title Substring", "required": True},
+        "title": {
+            "type": "string",
+            "label": "Window Title or App Name",
+            "required": False,
+            "default": "",
+            "placeholder": "e.g. VLC, Notepad, Chrome (or blank for last launched app)",
+        },
         "timeout": {"type": "number", "label": "Timeout (seconds)", "default": 30.0},
     }
 
@@ -39,20 +45,19 @@ class WaitForWindowAction(BaseAction):
         title = self.params.get("title")
         timeout = float(self.params.get("timeout", 30.0))
 
-        if not title:
-            return ActionResult(success=False, message="Window title required", error="Missing title")
-
         start = time.time()
         while time.time() - start < timeout:
             if context.is_cancelled():
                 return ActionResult(success=False, message="Cancelled while waiting for window")
-            
-            hwnd = WindowManager.find_window(title)
-            if hwnd:
-                return ActionResult(success=True, message=f"Window matching '{title}' appeared (HWND={hwnd}).")
-            time.sleep(0.5)
 
-        return ActionResult(success=False, message=f"Timed out waiting for window '{title}' ({timeout}s)", error="Timeout")
+            hwnd = WindowManager.find_window(title, timeout=0.0, context=context)
+            if hwnd:
+                name_str = f"'{title}'" if title else "last launched / active window"
+                return ActionResult(success=True, message=f"Window for {name_str} appeared (HWND={hwnd}).")
+            time.sleep(0.3)
+
+        name_str = f"'{title}'" if title else "last launched / active window"
+        return ActionResult(success=False, message=f"Timed out waiting for window {name_str} ({timeout}s)", error="Timeout")
 
 
 class WaitForFileAction(BaseAction):

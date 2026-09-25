@@ -1,4 +1,5 @@
 import app.actions.audio
+import app.actions.browser
 import app.actions.conditional
 import app.actions.filesystem
 import app.actions.keyboard

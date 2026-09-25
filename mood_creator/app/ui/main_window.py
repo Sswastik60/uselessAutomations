@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QEvent, Qt, QTimer
 from PySide6.QtGui import QAction, QIcon, QKeyEvent, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -256,11 +256,17 @@ class MainWindow(QMainWindow):
         try:
             mode = self.mode_manager.get_mode(mode_id)
         except Exception as e:
-            QMessageBox.critical(self, "Mode Error", str(e))
+            if not self.isHidden():
+                QMessageBox.critical(self, "Mode Error", str(e))
+            else:
+                self.notification_service.show_notification("Automation Hub", f"Mode Error: {e}")
             return
 
         if self.engine.is_running():
-            QMessageBox.warning(self, "Engine Busy", "Another Mode is currently executing!")
+            msg = "Another Mode is currently executing!"
+            ToastManager.show_toast(self, f"⚠ {msg}", level="warning")
+            if not self.isHidden():
+                QMessageBox.warning(self, "Engine Busy", msg)
             return
 
         # Trigger Signature Floating HUD Overlay Window
@@ -274,12 +280,22 @@ class MainWindow(QMainWindow):
         worker.signals.mode_progress.connect(overlay.update_progress)
         worker.signals.mode_completed.connect(overlay.complete_mode)
         worker.signals.mode_completed.connect(
-            lambda m_id, m_name, dur: ToastManager.show_toast(self, f"✓ {m_name} ready ({dur:.2f}s)", level="success")
+            lambda m_id, m_name, dur: self._on_mode_run_finished(m_name, dur, None)
         )
         worker.signals.mode_failed.connect(overlay.fail_mode)
         worker.signals.mode_failed.connect(
-            lambda m_id, m_name, err: ToastManager.show_toast(self, f"✕ {m_name} issue: {err}", level="error")
+            lambda m_id, m_name, err: self._on_mode_run_finished(m_name, 0.0, str(err))
         )
+
+    def _on_mode_run_finished(self, m_name: str, dur: float, err: Optional[str]) -> None:
+        if err:
+            ToastManager.show_toast(self, f"✕ {m_name} issue: {err}", level="error")
+            if self.isHidden() and self.settings_store.settings.notifications_enabled:
+                self.notification_service.show_notification("Automation Hub", f"✕ {m_name} issue: {err}")
+        else:
+            ToastManager.show_toast(self, f"✓ {m_name} ready ({dur:.2f}s)", level="success")
+            if self.isHidden() and self.settings_store.settings.notifications_enabled:
+                self.notification_service.show_notification("Automation Hub", f"✓ {m_name} is active ({dur:.2f}s)")
 
 
     def edit_mode(self, mode_id: str) -> None:
@@ -379,8 +395,10 @@ class MainWindow(QMainWindow):
 
     def _on_save_mode(self, mode: Mode) -> None:
         self.mode_manager.save_mode(mode)
-        if mode.hotkey:
+        if mode.hotkey and mode.enabled:
             self.hotkey_service.register_mode_hotkey(mode.id, mode.hotkey)
+        else:
+            self.hotkey_service.unregister_mode_hotkey(mode.id)
         self.refresh_dashboard()
         self.sidebar.set_active_page(0)
         self._on_page_changed(0)
@@ -448,15 +466,11 @@ class MainWindow(QMainWindow):
         super().showEvent(event)
         self._apply_windows_dark_titlebar()
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key.Key_F11:
-            if self.isFullScreen():
-                self.showMaximized()
-            else:
-                self.showFullScreen()
-            event.accept()
-            return
-        super().keyPressEvent(event)
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.Type.WindowStateChange:
+            if self.isMinimized() and self.settings_store.settings.minimize_to_tray:
+                QTimer.singleShot(0, self.hide)
+        super().changeEvent(event)
 
     def _apply_windows_dark_titlebar(self) -> None:
         """Apply Windows 11 immersive dark mode and AMOLED black caption color to the native OS title bar."""
@@ -504,7 +518,7 @@ class MainWindow(QMainWindow):
             self.hide()
             if self.settings_store.settings.notifications_enabled:
                 self.notification_service.show_notification(
-                    "Automation Hub", "Running in background system tray."
+                    "Automation Hub", "Running in background system tray. Global hotkeys remain active."
                 )
         else:
             self.quit_app(force=True)

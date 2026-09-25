@@ -3,6 +3,7 @@
 import logging
 from typing import Optional
 from PySide6.QtCore import QPoint, QTimer, Qt
+from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget
 
 from app.ui.animation_manager import AnimationManager
@@ -102,16 +103,25 @@ class ToastManager:
         duration_ms: int = 2500,
     ) -> ToastWidget:
         """Spawn and align a subtle toast notification near the bottom right of screen or parent."""
-        toast = ToastWidget(message=message, level=level, parent=parent)
+        # If parent is hidden, pass parent=None so the toast (as a tool window) is not hidden
+        actual_parent = parent if (parent and parent.isVisible()) else None
+        toast = ToastWidget(message=message, level=level, parent=actual_parent)
 
-        if parent:
-            parent_geo = parent.geometry()
-            global_pos = parent.mapToGlobal(QPoint(0, 0))
+        if actual_parent:
+            parent_geo = actual_parent.geometry()
+            global_pos = actual_parent.mapToGlobal(QPoint(0, 0))
             x = global_pos.x() + parent_geo.width() - toast.width() - 24
             y = global_pos.y() + parent_geo.height() - toast.height() - 24
             toast.move(max(10, x), max(10, y))
         else:
-            toast.move(100, 100)
+            screen = QGuiApplication.primaryScreen()
+            if screen:
+                geo = screen.availableGeometry()
+                x = geo.x() + geo.width() - toast.width() - 24
+                y = geo.y() + geo.height() - toast.height() - 24
+                toast.move(max(10, x), max(10, y))
+            else:
+                toast.move(100, 100)
 
         toast.show_toast(duration_ms=duration_ms)
         cls._active_toasts.append(toast)

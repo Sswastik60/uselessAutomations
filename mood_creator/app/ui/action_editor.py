@@ -122,6 +122,7 @@ class ActionEditorDialog(QDialog):
             field_type = field_spec.get("type", "string")
             field_label = field_spec.get("label", field_key)
             default_val = field_spec.get("default")
+            placeholder = field_spec.get("placeholder")
 
             if field_type == "boolean":
                 inp = QCheckBox()
@@ -137,12 +138,34 @@ class ActionEditorDialog(QDialog):
                 self.param_inputs[field_key] = inp
                 self.params_form.addRow(f"{field_label}:", inp)
             else:
-                # String field (check if file path parameter)
-                if any(kw in field_key.lower() for kw in ["path", "file", "source", "destination", "directory", "executable"]):
+                # Check if window title selector parameter
+                if field_key.lower() in ("title", "window_title", "window"):
                     h_box = QHBoxLayout()
                     inp = QLineEdit()
                     if default_val is not None:
                         inp.setText(str(default_val))
+                    if placeholder:
+                        inp.setPlaceholderText(placeholder)
+
+                    pick_btn = QPushButton("🪟 Select Window...")
+                    pick_btn.setProperty("class", "SecondaryButton")
+                    pick_btn.clicked.connect(lambda _, field=inp: self._select_running_window(field))
+
+                    h_box.addWidget(inp, stretch=1)
+                    h_box.addWidget(pick_btn)
+
+                    self.param_inputs[field_key] = inp
+                    self.params_form.addRow(f"{field_label}:", h_box)
+
+                # Check if file path parameter
+                elif any(kw in field_key.lower() for kw in ["path", "file", "source", "destination", "directory", "executable", "application"]):
+                    h_box = QHBoxLayout()
+                    inp = QLineEdit()
+                    if default_val is not None:
+                        inp.setText(str(default_val))
+                    if placeholder:
+                        inp.setPlaceholderText(placeholder)
+
                     browse_btn = QPushButton("Browse...")
                     browse_btn.setProperty("class", "SecondaryButton")
                     browse_btn.clicked.connect(lambda _, field=inp, key=field_key: self._browse_path(field, key))
@@ -156,12 +179,66 @@ class ActionEditorDialog(QDialog):
                     inp = QLineEdit()
                     if default_val is not None:
                         inp.setText(str(default_val))
+                    if placeholder:
+                        inp.setPlaceholderText(placeholder)
                     self.param_inputs[field_key] = inp
                     self.params_form.addRow(f"{field_label}:", inp)
+
+    def _select_running_window(self, line_edit: QLineEdit) -> None:
+        """Display a popup menu of currently active visible windows to auto-fill target title."""
+        from app.windows.windows import WindowManager
+        from PySide6.QtWidgets import QMenu
+        from PySide6.QtGui import QCursor
+
+        menu = QMenu(self)
+        menu.setStyleSheet(
+            "QMenu { background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 4px; } "
+            "QMenu::item { padding: 6px 14px; border-radius: 4px; } "
+            "QMenu::item:selected { background: #38bdf8; color: #0f172a; }"
+        )
+
+        act_last = menu.addAction("⚡ [Last Launched App / Active Window]")
+        act_last.triggered.connect(lambda: line_edit.setText(""))
+        menu.addSeparator()
+
+        windows = WindowManager.get_all_visible_windows()
+        seen = set()
+        count = 0
+        for hwnd, title, pname in windows:
+            if title and pname:
+                label = f"{title[:45]} ({pname})"
+                val = pname.removesuffix(".exe")
+            elif title:
+                label = title[:50]
+                val = title
+            elif pname:
+                label = pname
+                val = pname.removesuffix(".exe")
+            else:
+                continue
+
+            if val in seen:
+                continue
+            seen.add(val)
+
+            act = menu.addAction(f"🪟 {label}")
+            act.triggered.connect(lambda checked=False, v=val: line_edit.setText(v))
+            count += 1
+            if count >= 30:
+                break
+
+        menu.exec(QCursor.pos())
 
     def _browse_path(self, line_edit: QLineEdit, field_key: str) -> None:
         if "dir" in field_key.lower() or "folder" in field_key.lower():
             path = QFileDialog.getExistingDirectory(self, f"Select Directory for {field_key}")
+        elif any(kw in field_key.lower() for kw in ["app", "executable", "process"]):
+            path, _ = QFileDialog.getOpenFileName(
+                self,
+                f"Select Application for {field_key}",
+                "",
+                "Executables & Shortcuts (*.exe *.lnk *.bat *.cmd);;All Files (*.*)",
+            )
         else:
             path, _ = QFileDialog.getOpenFileName(self, f"Select File for {field_key}", "", "All Files (*.*)")
         if path:
@@ -187,7 +264,10 @@ class ActionEditorDialog(QDialog):
                 elif isinstance(widget, QSpinBox):
                     widget.setValue(int(val))
                 elif isinstance(widget, QLineEdit):
-                    widget.setText(str(val))
+                    if isinstance(val, list):
+                        widget.setText(" ".join(str(x) for x in val))
+                    else:
+                        widget.setText(str(val))
 
     def get_action_config(self) -> ActionConfig:
         action_type = self.type_combo.currentData()
