@@ -21,7 +21,7 @@ HackFill is built with an **offline-first matching engine** (strict canonical al
 
 ## 🚀 Features
 
-- **Visible Browser Automation**: Built on Chromium via Playwright. Watch every field populate in real time.
+- **Multi-Browser Automation**: Native support for **Brave Browser** (auto-detected), Chromium, Google Chrome, and Microsoft Edge. Watch every field populate in real time.
 - **Intelligent Field Matching**:
   - Exact key matching (`name`, `email`, `phone`, `college`)
   - Extensive alias matching (`institution` → `college`, `mobileNumber` → `phone`, `github_profile` → `github`)
@@ -103,6 +103,23 @@ HackFill is built with an **offline-first matching engine** (strict canonical al
    ```powershell
    python main.py
    ```
+
+---
+
+## 🦁 Using with Brave Browser
+
+HackFill natively supports **Brave Browser**!
+
+1. Open **HackFill** and navigate to the **Settings** tab in the sidebar.
+2. Under **Browser Engine**, select **Brave** from the *Browser Type* dropdown.
+3. HackFill automatically checks standard Windows installation paths:
+   - `C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe`
+   - `C:\Program Files (x86)\BraveSoftware\Brave-Browser\Application\brave.exe`
+   - `%LOCALAPPDATA%\BraveSoftware\Brave-Browser\Application\brave.exe`
+   - Windows Registry App Paths
+4. If your Brave executable is detected, a green **[INSTALLED]** badge appears.
+5. *(Optional)* If you use a custom or portable Brave directory, click **Browse...** next to *Custom Executable Path* and select your `brave.exe`.
+6. Click **Save Settings**. When you start automation, HackFill will launch and drive your Brave browser!
 
 ---
 

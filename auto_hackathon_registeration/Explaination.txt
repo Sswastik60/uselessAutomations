@@ -191,6 +191,22 @@ browser operations:
 4. The user interface remains 100% responsive, animations remain smooth, logs update in
    real time, and the `[ STOP ]` button halts execution instantly.
 
+G. Multi-Browser Support & Brave Engine (`app/automation/browser.py`)
+--------------------------------------------------------------------------------
+While Chromium is bundled with Playwright, many developers prefer using their
+daily driver browser such as Brave, Chrome, or Edge.
+HackFill natively supports Brave Browser:
+1. Auto-Detection: When 'Brave' is selected, HackFill checks standard Windows
+   registry keys (`SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\brave.exe`)
+   and candidate file locations (`C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe`,
+   `%LOCALAPPDATA%`, etc.).
+2. Custom Path: If a portable or custom installation is used, the Settings UI
+   allows browsing and selecting any custom executable binary.
+3. Execution: Passes `executable_path=brave_path` to `playwright.chromium.launch()`.
+   Because Brave is built on Chromium, Playwright commands (`locator.fill()`,
+   `select_option()`, etc.) execute seamlessly with Brave's native shields and privacy!
+
+
 
 ================================================================================
 4. COMPLETE USER WORKFLOW
@@ -230,7 +246,8 @@ browser operations:
 ================================================================================
 5. TESTING & VERIFICATION
 ================================================================================
-The project comes with 23 automated tests covering 100% of the workflow:
+The project comes with 27 automated tests covering 100% of the workflow:
+- `tests/test_brave_browser.py`: Brave auto-detection, custom binary path, and Playwright execution.
 - `tests/test_profile_parser.py`: Profile parsing, syntax, comments, duplicates, validator.
 - `tests/test_field_matching.py`: Aliases, normalized matching, confidence scoring, legal guard.
 - `tests/test_form_detection.py`: Headless Playwright DOM scanning and button detection.

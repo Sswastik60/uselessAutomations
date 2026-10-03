@@ -244,7 +244,7 @@ class MainWindow(QMainWindow):
 
         # Prepare crawler
         self.crawler = FormCrawler(settings=self.settings_manager.settings)
-        self.automation_view.set_target_url(url)
+        self.automation_view.set_target_url(url, browser_name=self.settings_manager.settings.browser)
         self._set_active_nav(1)  # Switch to Automation View
 
         # Spawn Worker Thread

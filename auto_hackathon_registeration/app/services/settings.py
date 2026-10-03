@@ -9,7 +9,8 @@ from typing import Optional
 @dataclass
 class AppSettings:
     """Configuration options for HackFill automation and behavior."""
-    browser: str = "Chromium"
+    browser: str = "Chromium"  # "Chromium", "Brave", "Chrome", "Edge", "Custom"
+    custom_browser_path: str = ""
     browser_visible: bool = True
     timeout_seconds: int = 30
     max_pages: int = 30

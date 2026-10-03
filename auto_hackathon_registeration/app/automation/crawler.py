@@ -25,6 +25,8 @@ class FormCrawler:
         self.logger = get_logger()
 
         self.browser_manager = BrowserManager(
+            browser_type=self.settings.browser,
+            custom_executable_path=self.settings.custom_browser_path,
             visible=self.settings.browser_visible,
             timeout_seconds=self.settings.timeout_seconds
         )

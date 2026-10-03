@@ -207,8 +207,8 @@ class AutomationView(QWidget):
         self.btn_use_answer.clicked.connect(self._on_use_answer)
         self.btn_skip_question.clicked.connect(self._on_skip_question)
 
-    def set_target_url(self, url: str):
-        self.website_label.setText(f"Website: {url}")
+    def set_target_url(self, url: str, browser_name: str = "Chromium"):
+        self.website_label.setText(f"Website: {url} • Engine: {browser_name}")
         self.fields_table.setRowCount(0)
         self.progress_bar.setValue(0)
         self.progress_count_label.setText("0 / 0 fields populated")

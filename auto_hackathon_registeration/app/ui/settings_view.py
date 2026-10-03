@@ -1,22 +1,24 @@
 """Settings View - Configuration panel for browser, automation, and safety behavior."""
 
+from pathlib import Path
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-    QCheckBox, QSpinBox, QMessageBox
+    QCheckBox, QSpinBox, QLineEdit, QFileDialog, QMessageBox
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
 from .components import (
-    CardFrame, PrimaryButton, SecondaryButton,
+    CardFrame, PrimaryButton, SecondaryButton, BadgeLabel,
     COLOR_BG_CARD, COLOR_BG_SURFACE, COLOR_TEXT_WHITE,
     COLOR_TEXT_MUTED, COLOR_TEXT_DIM, COLOR_BORDER, COLOR_WHITE
 )
 from ..services.settings import AppSettings, SettingsManager
+from ..automation.browser import find_browser_executable
 
 
 class SettingsView(QWidget):
-    """Settings interface for configuring HackFill runtime and safety parameters."""
+    """Settings interface for configuring HackFill runtime, browser choice, and safety parameters."""
 
     settings_saved = Signal(AppSettings)
 
@@ -39,7 +41,7 @@ class SettingsView(QWidget):
         title.setFont(QFont("-apple-system", 18, QFont.Bold))
         title.setStyleSheet(f"color: {COLOR_WHITE}; letter-spacing: -0.5px;")
 
-        subtitle = QLabel("Configure browser execution, navigation limits, and safety pauses.")
+        subtitle = QLabel("Configure browser execution (Chromium, Brave, Chrome, Edge), navigation limits, and safety pauses.")
         subtitle.setFont(QFont("-apple-system", 11))
         subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
 
@@ -61,12 +63,47 @@ class SettingsView(QWidget):
         b_row1 = QHBoxLayout()
         b_label1 = QLabel("Browser Type:")
         b_label1.setFixedWidth(200)
+
         self.combo_browser = QComboBox()
-        self.combo_browser.addItem("Chromium")
+        self.combo_browser.addItem("Brave", "Brave")
+        self.combo_browser.addItem("Chromium", "Chromium")
+        self.combo_browser.addItem("Chrome", "Chrome")
+        self.combo_browser.addItem("Edge", "Edge")
         self.combo_browser.setFixedHeight(34)
+        self.combo_browser.currentIndexChanged.connect(self._on_browser_changed)
+
+        self.browser_detected_badge = BadgeLabel("DETECTED", "SUCCESS")
+        self.browser_detected_badge.setFixedHeight(28)
+
         b_row1.addWidget(b_label1)
         b_row1.addWidget(self.combo_browser, stretch=1)
+        b_row1.addWidget(self.browser_detected_badge)
         b_layout.addLayout(b_row1)
+
+        # Detected path info label
+        self.browser_path_info = QLabel("")
+        self.browser_path_info.setFont(QFont("Consolas", 9))
+        self.browser_path_info.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
+        b_layout.addWidget(self.browser_path_info)
+
+        # Custom executable path row
+        b_row2 = QHBoxLayout()
+        b_label2 = QLabel("Custom Executable Path:")
+        b_label2.setFixedWidth(200)
+
+        self.input_custom_path = QLineEdit()
+        self.input_custom_path.setPlaceholderText("Optional: C:\\Path\\To\\brave.exe")
+        self.input_custom_path.setFixedHeight(34)
+        self.input_custom_path.textChanged.connect(lambda _: self._on_browser_changed())
+
+        self.btn_browse_browser = SecondaryButton("Browse...")
+        self.btn_browse_browser.setFixedHeight(34)
+        self.btn_browse_browser.clicked.connect(self._browse_custom_browser)
+
+        b_row2.addWidget(b_label2)
+        b_row2.addWidget(self.input_custom_path, stretch=1)
+        b_row2.addWidget(self.btn_browse_browser)
+        b_layout.addLayout(b_row2)
 
         self.chk_visible = QCheckBox("Keep browser visible while automating (Recommended)")
         self.chk_visible.setChecked(True)
@@ -155,8 +192,40 @@ class SettingsView(QWidget):
         layout.addLayout(actions_row)
         layout.addStretch()
 
+    def _on_browser_changed(self):
+        b_type = self.combo_browser.currentData() or "Chromium"
+        custom_path = self.input_custom_path.text().strip()
+
+        if b_type == "Chromium":
+            self.browser_detected_badge.set_level("SUCCESS", "PLAYWRIGHT BUILT-IN")
+            self.browser_path_info.setText("Using Playwright's managed Chromium browser.")
+        else:
+            path = find_browser_executable(b_type, custom_path)
+            if path:
+                self.browser_detected_badge.set_level("SUCCESS", "INSTALLED")
+                self.browser_path_info.setText(f"Found binary: {path}")
+            else:
+                self.browser_detected_badge.set_level("WARNING", "NOT DETECTED")
+                self.browser_path_info.setText(f"Could not locate {b_type}. Specify custom path or install it.")
+
+    def _browse_custom_browser(self):
+        filepath, _ = QFileDialog.getOpenFileName(
+            self, "Select Browser Binary", "C:\\", "Executable Files (*.exe);;All Files (*)"
+        )
+        if filepath:
+            self.input_custom_path.setText(filepath)
+            self._on_browser_changed()
+
     def load_settings(self):
         s = self.manager.settings
+        # Find matching combo index
+        idx = self.combo_browser.findData(s.browser)
+        if idx >= 0:
+            self.combo_browser.setCurrentIndex(idx)
+        else:
+            self.combo_browser.setCurrentIndex(0)
+
+        self.input_custom_path.setText(s.custom_browser_path)
         self.chk_visible.setChecked(s.browser_visible)
         self.spin_timeout.setValue(s.timeout_seconds)
         self.spin_max_pages.setValue(s.max_pages)
@@ -164,9 +233,12 @@ class SettingsView(QWidget):
         self.chk_pause_uncertain.setChecked(s.pause_on_uncertain_fields)
         self.chk_pause_captcha.setChecked(s.pause_on_captcha)
         self.chk_logging.setChecked(s.logging_enabled)
+        self._on_browser_changed()
 
     def save_settings(self):
         s = self.manager.settings
+        s.browser = self.combo_browser.currentData() or "Chromium"
+        s.custom_browser_path = self.input_custom_path.text().strip()
         s.browser_visible = self.chk_visible.isChecked()
         s.timeout_seconds = self.spin_timeout.value()
         s.max_pages = self.spin_max_pages.value()
@@ -177,10 +249,14 @@ class SettingsView(QWidget):
 
         self.manager.save()
         self.settings_saved.emit(s)
-        QMessageBox.information(self, "Settings Saved", "Preferences updated and saved successfully.")
+        QMessageBox.information(self, "Settings Saved", f"Preferences updated! Engine set to: {s.browser}")
 
     def reset_defaults(self):
         default = AppSettings()
+        idx = self.combo_browser.findData(default.browser)
+        if idx >= 0:
+            self.combo_browser.setCurrentIndex(idx)
+        self.input_custom_path.setText("")
         self.chk_visible.setChecked(default.browser_visible)
         self.spin_timeout.setValue(default.timeout_seconds)
         self.spin_max_pages.setValue(default.max_pages)
@@ -188,3 +264,4 @@ class SettingsView(QWidget):
         self.chk_pause_uncertain.setChecked(default.pause_on_uncertain_fields)
         self.chk_pause_captcha.setChecked(default.pause_on_captcha)
         self.chk_logging.setChecked(default.logging_enabled)
+        self._on_browser_changed()
