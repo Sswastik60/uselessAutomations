@@ -58,7 +58,25 @@ class FormFiller:
                 # Match against visible text first
                 best_text = FieldMatcherEngine.match_option_value(option_texts, value)
                 if best_text:
-                    locator.select_option(label=best_text, timeout=3000)
+                    try:
+                        locator.select_option(label=best_text, timeout=3000)
+                    except Exception:
+                        page.evaluate("""([sel, txt]) => {
+                            const el = document.querySelector(sel);
+                            if (el) {
+                                for (let opt of el.options) {
+                                    if (opt.text.trim().toLowerCase() === txt.trim().toLowerCase()) {
+                                        el.value = opt.value;
+                                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                                        break;
+                                    }
+                                }
+                                if (window.$ && $(el).data('select2')) {
+                                    $(el).select2('val', el.value);
+                                }
+                            }
+                        }""", [field.selector, best_text])
+
                     self.logger.info(f"Selected '{best_text}' for dropdown '{field.display_name}'")
                     match.status = "FILLED"
                     return True
@@ -66,7 +84,20 @@ class FormFiller:
                 # Fallback to value match
                 best_val = FieldMatcherEngine.match_option_value(option_values, value)
                 if best_val:
-                    locator.select_option(value=best_val, timeout=3000)
+                    try:
+                        locator.select_option(value=best_val, timeout=3000)
+                    except Exception:
+                        page.evaluate("""([sel, val]) => {
+                            const el = document.querySelector(sel);
+                            if (el) {
+                                el.value = val;
+                                el.dispatchEvent(new Event('change', { bubbles: true }));
+                                if (window.$ && $(el).data('select2')) {
+                                    $(el).select2('val', val);
+                                }
+                            }
+                        }""", [field.selector, best_val])
+
                     self.logger.info(f"Selected option value '{best_val}' for dropdown '{field.display_name}'")
                     match.status = "FILLED"
                     return True
@@ -76,13 +107,26 @@ class FormFiller:
 
             # 3. Radio Buttons
             elif field.field_type == FieldType.RADIO:
-                # If this specific radio button's value matches
                 val_lower = value.strip().lower()
                 field_val_lower = (field.current_value or "").strip().lower()
                 label_lower = field.label.strip().lower()
 
-                if val_lower in field_val_lower or val_lower in label_lower:
-                    locator.check(timeout=3000)
+                if val_lower in field_val_lower or val_lower in label_lower or not field_val_lower:
+                    try:
+                        locator.check(timeout=3000, force=True)
+                    except Exception:
+                        try:
+                            locator.click(timeout=3000, force=True)
+                        except Exception:
+                            page.evaluate("""(sel) => {
+                                const el = document.querySelector(sel);
+                                if (el) {
+                                    el.checked = true;
+                                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                                }
+                            }""", field.selector)
+
                     self.logger.info(f"Selected radio option '{field.display_name}'")
                     match.status = "FILLED"
                     return True
@@ -96,12 +140,20 @@ class FormFiller:
                 # Check if user profile value is positive or auto-pilot checkbox clicking is active
                 if str(value).strip().lower() in ("yes", "true", "1", "checked", "agree") or self.auto_check_checkboxes:
                     try:
-                        locator.check(timeout=3000)
+                        locator.check(timeout=3000, force=True)
                     except Exception:
                         try:
-                            locator.click(timeout=3000)
+                            locator.click(timeout=3000, force=True)
                         except Exception:
-                            pass
+                            page.evaluate("""(sel) => {
+                                const el = document.querySelector(sel);
+                                if (el) {
+                                    el.checked = true;
+                                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                                }
+                            }""", field.selector)
+
                     self.logger.info(f"Checked box '{field.display_name}'")
                     match.status = "FILLED"
                     return True
