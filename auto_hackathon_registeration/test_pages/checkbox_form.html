@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Declarations & Checkboxes</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f11; color: #f0f0f0; margin: 0; padding: 40px; }
+    .form-container { max-width: 600px; margin: 0 auto; background: #1a1a1f; padding: 32px; border-radius: 8px; border: 1px solid #2e2e38; }
+    h1 { margin-top: 0; font-size: 24px; color: #fff; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px; color: #d0d0d5; }
+    input[type="text"] {
+      width: 100%; padding: 12px 14px; border: 1px solid #3a3a46; border-radius: 6px; background: #121216; color: #fff; font-size: 14px; box-sizing: border-box;
+    }
+    .check-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; font-size: 14px; color: #c0c0cb; line-height: 1.4; }
+    .check-item input[type="checkbox"] { margin-top: 3px; cursor: pointer; }
+    button[type="submit"] {
+      background: #ffffff; color: #000000; border: none; padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h1>Hackathon Agreements & Preferences</h1>
+    <form id="agreements-form" onsubmit="event.preventDefault(); alert('Confirmed!');">
+      <div class="form-group">
+        <label for="applicant_name">Participant Name *</label>
+        <input type="text" id="applicant_name" name="name" placeholder="Full Name" required>
+      </div>
+
+      <div class="form-group">
+        <label>Agreements & Declarations</label>
+        <div class="check-item">
+          <input type="checkbox" id="code_of_conduct" name="agree_terms" required>
+          <label for="code_of_conduct">I agree to the Hackathon Code of Conduct and Terms of Service * (Requires explicit confirmation)</label>
+        </div>
+        <div class="check-item">
+          <input type="checkbox" id="newsletter" name="subscribe_newsletter">
+          <label for="newsletter">Subscribe to monthly hackathon updates and sponsor opportunities</label>
+        </div>
+        <div class="check-item">
+          <input type="checkbox" id="travel_grant" name="request_travel">
+          <label for="travel_grant">I would like to apply for the student travel reimbursement grant</label>
+        </div>
+      </div>
+
+      <button type="submit" id="submit-agreements">Confirm & Register</button>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,254 @@
+================================================================================
+HACKFILL — COMPLETE PROJECT EXPLANATION & ARCHITECTURE GUIDE
+================================================================================
+Product Name : HackFill
+Tagline      : "Fill hackathon registrations in seconds."
+Platform     : Windows 11 Desktop Application
+Tech Stack   : Python 3.12+, PySide6 (Qt for Python), Playwright (Chromium)
+Aesthetic    : AMOLED Black, Pure White, Grays (Strictly Monochrome)
+Author       : Swastik & Contributors
+================================================================================
+
+1. WHAT IS HACKFILL?
+--------------------------------------------------------------------------------
+HackFill is a developer utility designed to solve a repetitive pain point
+faced by hackathon participants: manually filling out the same registration
+forms (Devpost, Unstop, Devfolio, Google Forms, Typeform, custom hackathon
+sites) dozens of times per season.
+
+Instead of re-typing your name, university, degree, branch, graduation year,
+GitHub, LinkedIn, portfolio links, team details, and essays for every single
+event, HackFill automatically reads your local TXT profile and populates the
+web form in a controlled, visible Chromium browser in real time.
+
+CRITICAL PRINCIPLES:
+1. No External AI API: Operates 100% offline using a fast, deterministic matching engine.
+2. Complete Privacy: Your profile data stays on your local machine and is never sent to any cloud server.
+3. No Blind Submissions: The application NEVER submits a form automatically. A mandatory
+   review screen requires explicit user confirmation before any final submission occurs.
+4. Human-in-the-Loop: If a CAPTCHA, OTP, login wall, or custom question appears, HackFill
+   pauses gracefully, lets you solve it in the visible browser, and resumes seamlessly.
+5. Legal Safety: Checkboxes for Terms & Conditions, Codes of Conduct, and agreements are
+   never automatically checked; they must be confirmed by the human user.
+
+
+================================================================================
+2. SYSTEM ARCHITECTURE & FOLDER STRUCTURE
+================================================================================
+The project follows a clean, modular architecture separating UI, models,
+services, profile parsing, matching, and browser automation:
+
+auto_hackathon_registeration/
+│
+├── main.py                     # Entry point for the PySide6 desktop application
+├── requirements.txt            # Minimal runtime & testing dependencies
+├── build.bat                   # PyInstaller Windows build script (HackFill.exe)
+├── README.md                   # Open-source documentation
+├── LICENSE                     # MIT License
+├── .gitignore                  # Git ignore rules for Python, Playwright, venvs
+├── Explaination.txt            # This comprehensive project explanation guide
+│
+├── profiles/
+│   └── example_profile.txt     # Reference TXT profile with standard & custom fields
+│
+├── test_pages/                 # Local HTML test forms for offline testing
+│   ├── basic_form.html         # Standard text inputs (Name, Email, Phone, College)
+│   ├── dropdown_form.html      # Selects (Degree, Branch, Year) & Radio buttons
+│   ├── multi_page_form.html    # Multi-step registration wizard (Steps 1, 2, 3)
+│   ├── custom_questions.html   # Essays, textareas, and custom unmapped prompts
+│   └── checkbox_form.html      # Terms & conditions, optional newsletters
+│
+├── tests/                      # Automated test suite (23 automated pytest tests)
+│   ├── test_profile_parser.py  # Tests TXT parsing, comments, duplicates, validation
+│   ├── test_field_matching.py  # Tests aliases, normalized matching, confidence scoring
+│   ├── test_form_detection.py  # Tests DOM scanning and button classification
+│   ├── test_gui_smoke.py       # Tests PySide6 window instantiation & navigation
+│   └── test_local_forms.py     # End-to-end Playwright tests on local HTML forms
+│
+└── app/
+    ├── __init__.py
+    │
+    ├── models/                 # Pure domain dataclasses
+    │   ├── profile.py          # UserProfile, ProfileField, ProfileValidationResult
+    │   ├── form_field.py       # FormField, FieldType, FieldOption, FieldMatch
+    │   └── scan_result.py      # ScanResult, AutomationStatus, PageState
+    │
+    ├── profile/                # Profile management
+    │   ├── parser.py           # TXT file parser (comment & delimiter handling)
+    │   ├── validator.py        # Semantic validation (emails, phone, URLs, numbers)
+    │   └── schema.py           # Standard schema definitions and metadata
+    │
+    ├── utils/                  # Core algorithms & utilities
+    │   ├── helpers.py          # URL validation (HTTP/HTTPS/file), string normalizers
+    │   └── matching.py         # Multi-tier offline matching engine & confidence scorer
+    │
+    ├── services/               # Background services
+    │   ├── logger.py           # Thread-safe ActivityLogger emitting PySide6 signals
+    │   └── settings.py         # JSON settings persistence (settings.json)
+    │
+    ├── automation/             # Playwright browser controller
+    │   ├── browser.py          # Chromium lifecycle manager (launch, navigate, close)
+    │   ├── form_detector.py    # In-page JS DOM scanner extracting field properties
+    │   ├── field_matcher.py    # Matches FormFields against UserProfile
+    │   ├── form_filler.py      # Executes fill, select, radio, and checkbox actions
+    │   ├── navigation.py       # Multi-page wizard stepper & loop prevention
+    │   ├── human_intervention.py # Scans for reCAPTCHA, hCaptcha, Turnstile, OTPs
+    │   └── crawler.py          # Master orchestrator managing the automation lifecycle
+    │
+    └── ui/                     # PySide6 AMOLED desktop interface
+        ├── components.py       # Design system (buttons, badges, progress bar, cards)
+        ├── dashboard.py        # Main launchpad: URL input, profile picker, activity log
+        ├── automation_view.py  # Real-time monitor: pipeline steps, progress, intervention
+        ├── review_view.py      # Mandatory review screen with explicit confirm dialog
+        ├── profile_view.py     # Profile inspection, validation diagnostic, example creator
+        ├── settings_view.py    # Configuration controls (timeouts, limits, toggles)
+        └── main_window.py      # QMainWindow with left sidebar & QThread worker
+
+
+================================================================================
+3. HOW THE CORE SUBSYSTEMS WORK
+================================================================================
+
+A. TXT Profile Parser (`app/profile/parser.py`)
+--------------------------------------------------------------------------------
+The user creates a simple `.txt` file containing `key=value` pairs.
+The parser operates with strict, forgiving rules:
+1. Ignores empty or whitespace-only lines.
+2. Ignores comments beginning with `#` and tracks section names (e.g. `# Personal Information`).
+3. Splits ONLY on the first `=` character (`line.split("=", 1)`). This allows values
+   themselves to contain `=` signs (e.g. `github=https://site.com?user=swastik&tag=dev`).
+4. Trims leading and trailing whitespace on keys and values.
+5. Normalizes keys into lowercase snake_case (e.g. `Full Name` -> `full_name`).
+6. Detects duplicate keys, issues a diagnostic warning, and safely keeps the latest value.
+7. Flags malformed lines (lines missing an `=` delimiter).
+8. The Validator (`validator.py`) checks email formats via regex, phone numbers,
+   valid URLs (`https://`), and verifies integer fields like `team_size`.
+
+B. Intelligent Field Matcher (`app/utils/matching.py`)
+--------------------------------------------------------------------------------
+Web forms use different attribute names for the same concept (`fullName`, `candidateName`,
+`participant_name`, `emailAddress`, `institution`, `university`, etc.).
+HackFill uses a multi-tier offline matching engine:
+1. Exact Canonical Match: If the field's name, ID, or label matches a profile key exactly:
+   Confidence: 95%.
+2. Strong Alias Match: Uses a built-in alias dictionary mapping canonical concepts
+   to dozens of synonyms (`college` -> `university`, `institution`, `school_name`, etc.):
+   Confidence: 85% - 90%.
+3. Token & Substring Overlap: Checks if the alias is a substring of the web attribute:
+   Confidence: 70% - 80%.
+4. Semantic / String Distance (difflib SequenceMatcher): Compares the visible label
+   or placeholder text to profile fields:
+   Confidence: 45% - 70%.
+5. Thresholds:
+   - >= 70%: Automatic fill.
+   - 40% - 69%: Marked as "Pending Confirmation" for user confirmation.
+   - < 40%: Marked as "Unresolved" / Custom Question.
+6. Checkbox Guard: If the field contains keywords like `terms`, `condition`, `conduct`,
+   `policy`, or `agree`, its confidence is locked to 0.0 and marked `MANUAL_REQUIRED`.
+
+C. DOM Form Detector (`app/automation/form_detector.py`)
+--------------------------------------------------------------------------------
+To achieve high speed and accuracy without relying on fragile XPath selectors,
+HackFill evaluates an in-page JavaScript script (`DOM_INSPECTOR_JS`):
+1. Traverses visible `<input>`, `<textarea>`, and `<select>` controls.
+2. Identifies associated labels through `<label for="...">`, parent `<label>` tags,
+   `aria-labelledby`, preceding sibling labels, and container text.
+3. For `<select>` dropdowns, extracts all option values and visible text.
+4. Generates resilient selectors (`#id`, `tag[name="..."]`, or structural selectors).
+5. Detects navigation buttons ("Next", "Continue", "Proceed", "Save & Continue")
+   and submit buttons ("Submit", "Register", "Finish").
+
+D. Multi-Page Navigation & Loop Prevention (`app/automation/navigation.py`)
+--------------------------------------------------------------------------------
+Modern hackathon forms often span 2 to 5 steps (Personal -> Team -> Academic -> Review).
+1. The navigator identifies the next button on the page.
+2. Before advancing, it computes an MD5 hash signature of the currently visible inputs,
+   active wizard steps, and document title.
+3. It clicks the next button and waits for DOM stabilization (`domcontentloaded` + timeout).
+4. It re-computes the DOM signature. If the signature matches an already-visited state,
+   it detects an infinite loop and halts step progression safely.
+5. Limits total pages crawled to a configurable ceiling (default: 30 pages).
+
+E. Human Intervention & Safety (`app/automation/human_intervention.py`)
+--------------------------------------------------------------------------------
+HackFill respects security challenges and bot protections:
+1. Scans for reCAPTCHA iframes, hCaptcha widgets, Cloudflare Turnstile, Geetest, and OTP inputs.
+2. If detected, HackFill does not attempt to bypass them. It sets the status to `WAITING_MANUAL`,
+   displays a banner in the desktop UI:
+   "MANUAL ACTION REQUIRED: Complete the verification in the browser, then click Continue."
+3. The Chromium browser remains open and active.
+4. Once the human user solves the challenge in the browser, they click `[ CONTINUE ]`
+   in HackFill to resume automated filling.
+
+F. Threaded UI Architecture (`app/ui/main_window.py`)
+--------------------------------------------------------------------------------
+To prevent the PySide6 user interface from freezing or lagging during Playwright
+browser operations:
+1. The entire automation runs on a background `AutomationWorker` thread (`QThread`).
+2. Playwright runs synchronously within the worker thread.
+3. The worker communicates with the PySide6 UI exclusively through thread-safe Qt Signals
+   (`sig_status`, `sig_progress`, `sig_manual`, `sig_uncertain`, `sig_review`).
+4. The user interface remains 100% responsive, animations remain smooth, logs update in
+   real time, and the `[ STOP ]` button halts execution instantly.
+
+
+================================================================================
+4. COMPLETE USER WORKFLOW
+================================================================================
+1. Launch the Application:
+   Run `python main.py` or double-click `HackFill.exe`.
+
+2. Select Profile:
+   On the Dashboard, select an existing profile from the dropdown or click `[ Browse... ]`
+   to choose any `.txt` file. You can also click `[ View / Edit ]` to inspect parsed keys.
+   If starting fresh, click `[ Create Example Profile ]` in the Profile tab.
+
+3. Enter Hackathon URL:
+   Paste the registration URL into the input field (e.g. `https://hackathon.devpost.com/register`
+   or a local test page like `test_pages/basic_form.html`).
+
+4. Start Automation:
+   Click `[ START AUTOMATION ]`.
+   - The UI switches to the Automation Monitor tab.
+   - Chromium launches visibly on screen.
+   - The pipeline indicators illuminate: [Connecting] -> [Scanning] -> [Matching] -> [Filling].
+   - Detected fields populate the live table with match confidence percentages.
+
+5. Resolve Ambiguities (If Any):
+   - If a CAPTCHA or OTP appears, complete it in the browser and click `[ CONTINUE ]`.
+   - If an unrecognized custom essay question appears, an inline card allows you to enter
+     an answer or skip it.
+
+6. Mandatory Pre-Submission Review:
+   Once the form is filled, HackFill transitions to the Review tab:
+   - Personal Info, Academic Details, Team Info, and Essays are categorized into clean cards.
+   - Legal Checkboxes (Code of Conduct, Terms of Service) are explicitly shown for your review.
+   - Click `[ SUBMIT REGISTRATION ]`. A modal confirmation dialog appears.
+   - Upon confirming "Yes", HackFill triggers the final submit button in the browser.
+
+
+================================================================================
+5. TESTING & VERIFICATION
+================================================================================
+The project comes with 23 automated tests covering 100% of the workflow:
+- `tests/test_profile_parser.py`: Profile parsing, syntax, comments, duplicates, validator.
+- `tests/test_field_matching.py`: Aliases, normalized matching, confidence scoring, legal guard.
+- `tests/test_form_detection.py`: Headless Playwright DOM scanning and button detection.
+- `tests/test_local_forms.py`: End-to-end form fills on basic, dropdown, multi-page,
+  custom questions, and checkbox forms.
+- `tests/test_gui_smoke.py`: PySide6 window instantiation, navigation, and view bindings.
+
+To run all tests:
+```powershell
+.venv\Scripts\pytest -v
+```
+
+
+================================================================================
+6. PACKAGING & DEPLOYMENT
+================================================================================
+To build a standalone Windows executable (`HackFill.exe`):
+1. Run `build.bat` in the project root.
+2. PyInstaller packages the PySide6 app, profiles, and test pages into `dist/HackFill/`.
+3. Target executable: `dist/HackFill/HackFill.exe`.
+================================================================================

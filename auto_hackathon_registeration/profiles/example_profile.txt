@@ -1,0 +1,53 @@
+# ==============================================================================
+# HackFill Profile Configuration
+# Product: HackFill - "Fill hackathon registrations in seconds."
+# 
+# Instructions:
+# - Each line contains key=value
+# - Empty lines and lines starting with '#' are ignored
+# - Keys are normalized automatically (case-insensitive, spaces converted)
+# ==============================================================================
+
+# Personal Information
+name=Swastik
+first_name=Swastik
+last_name=Sharma
+email=swastik@example.com
+phone=9876543210
+gender=Male
+
+# Education
+college=Example University
+university=Example University
+degree=B.Tech
+branch=Computer Science and Engineering
+major=Computer Science and Engineering
+graduation_year=2026
+year=3
+
+# Location
+city=Bengaluru
+state=Karnataka
+country=India
+postal_code=560001
+
+# Online Profiles & Links
+github=https://github.com/example
+linkedin=https://linkedin.com/in/example
+portfolio=https://example.com
+resume=https://example.com/resume.pdf
+
+# Team Details
+team_name=ByteForce
+team_size=3
+team_role=Lead Developer
+
+# Hackathon & Technical Experience
+skills=Python, C++, JavaScript, React, PySide6, Playwright
+tshirt_size=L
+dietary_restrictions=None
+hackathon_experience=Yes
+why_participate=I want to build practical projects, solve real-world problems, and collaborate with passionate developers.
+project_idea=An automated tool to streamline hackathon registrations and team workflows.
+emergency_contact_name=Raj Sharma
+emergency_contact_phone=9876543211

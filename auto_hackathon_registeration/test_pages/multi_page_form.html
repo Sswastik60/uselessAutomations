@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Multi-Step Hackathon Registration</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f0f11; color: #f0f0f0; margin: 0; padding: 40px; }
+    .form-container { max-width: 600px; margin: 0 auto; background: #1a1a1f; padding: 32px; border-radius: 8px; border: 1px solid #2e2e38; }
+    h1 { margin-top: 0; font-size: 22px; color: #fff; }
+    .step-indicator { font-size: 13px; color: #888; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-step { display: none; }
+    .form-step.active { display: block; }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px; color: #d0d0d5; }
+    input[type="text"], input[type="email"], input[type="number"], select {
+      width: 100%; padding: 12px 14px; border: 1px solid #3a3a46; border-radius: 6px; background: #121216; color: #fff; font-size: 14px; box-sizing: border-box;
+    }
+    .btn-row { display: flex; justify-content: space-between; margin-top: 24px; }
+    button {
+      padding: 10px 20px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer;
+    }
+    .btn-next, .btn-submit { background: #ffffff; color: #000000; border: none; }
+    .btn-prev { background: #26262b; color: #fff; border: 1px solid #444; }
+    .summary-card { background: #121216; padding: 16px; border-radius: 6px; border: 1px solid #2e2e38; margin-bottom: 16px; font-size: 14px; }
+    .summary-item { margin-bottom: 8px; }
+    .summary-label { color: #888; }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <div id="step-label" class="step-indicator">Step 1 of 3: Personal Information</div>
+    
+    <!-- STEP 1: Personal Info -->
+    <div id="step-1" class="form-step active">
+      <h1>Step 1: Personal Information</h1>
+      <div class="form-group">
+        <label for="step1-name">Full Name *</label>
+        <input type="text" id="step1-name" name="fullName" placeholder="Your Full Name">
+      </div>
+      <div class="form-group">
+        <label for="step1-email">Email Address *</label>
+        <input type="email" id="step1-email" name="emailAddress" placeholder="Email Address">
+      </div>
+      <div class="btn-row">
+        <div></div>
+        <button type="button" class="btn-next" id="btn-step1-next" onclick="goToStep(2)">Next Step</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Team Details -->
+    <div id="step-2" class="form-step">
+      <h1>Step 2: Team Details</h1>
+      <div class="form-group">
+        <label for="step2-team">Team Name *</label>
+        <input type="text" id="step2-team" name="team_name" placeholder="ByteForce">
+      </div>
+      <div class="form-group">
+        <label for="step2-size">Team Size (Number of members) *</label>
+        <input type="number" id="step2-size" name="team_size" placeholder="3" min="1" max="5">
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn-prev" onclick="goToStep(1)">Back</button>
+        <button type="button" class="btn-next" id="btn-step2-next" onclick="goToStep(3)">Continue</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Education & Review -->
+    <div id="step-3" class="form-step">
+      <h1>Step 3: Academic Details & Finalize</h1>
+      <div class="form-group">
+        <label for="step3-college">College / University *</label>
+        <input type="text" id="step3-college" name="college" placeholder="College Name">
+      </div>
+      <div class="form-group">
+        <label for="step3-github">GitHub Profile URL</label>
+        <input type="text" id="step3-github" name="github" placeholder="https://github.com/username">
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn-prev" onclick="goToStep(2)">Back</button>
+        <button type="button" class="btn-submit" id="btn-step3-submit" onclick="finishRegistration()">Submit Registration</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div id="step-finish" class="form-step">
+      <h1>Registration Completed!</h1>
+      <p style="color: #aaffaa;">Thank you for registering. We look forward to seeing your project!</p>
+    </div>
+  </div>
+
+  <script>
+    let currentStep = 1;
+    function goToStep(step) {
+      document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+      currentStep = step;
+      if (step <= 3) {
+        document.getElementById(`step-${step}`).classList.add('active');
+        document.getElementById('step-label').textContent = `Step ${step} of 3`;
+      }
+    }
+    function finishRegistration() {
+      document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+      document.getElementById('step-finish').classList.add('active');
+      document.getElementById('step-label').textContent = 'Completed';
+    }
+  </script>
+</body>
+</html>
