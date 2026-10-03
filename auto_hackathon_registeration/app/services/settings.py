@@ -26,6 +26,11 @@ class AppSettings:
     smart_fallback_for_unknown: bool = True
     auto_submit_final: bool = False
 
+    # Already-Running Browser & CDP Controls
+    connect_to_existing_browser: bool = True
+    cdp_port: int = 9222
+    auto_restart_browser_with_debugging: bool = True
+
     last_profile_path: str = ""
     last_url: str = ""
 

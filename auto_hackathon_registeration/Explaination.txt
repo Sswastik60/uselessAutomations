@@ -310,4 +310,46 @@ HOW IT WORKS UNDER THE HOOD:
      and checked, allowing you 1 click to submit.
    - If you toggle `auto_submit_final: true` in Settings, HackFill clicks the final
      submit button automatically for true zero-click, hands-free automation!
+
+
+================================================================================
+8. ATTACHING TO AN ALREADY-OPEN BROWSER (ZERO NEW INSTANCES VIA CDP)
+================================================================================
+QUESTION:
+"I want it to run on the browser which I have already opened, not in a new one.
+It should automatically do the work in the browser which is already running,
+don't create a new instance."
+
+HOW THIS WORKS IN HACKFILL:
+In Chromium-based browsers (Brave, Chrome, Edge), external software cannot take
+over an existing window unless Chrome DevTools Protocol (CDP) remote debugging
+is enabled on that browser instance. This is a core Chromium security model.
+
+HackFill provides seamless, automated support for your already-open browser:
+
+1. Automatic CDP Attachment:
+   - When "Attach to already-open browser" is active (enabled by default),
+     HackFill calls `playwright.chromium.connect_over_cdp("http://localhost:9222")`.
+   - It attaches directly to your existing browser context, giving it access to
+     all your active logins, cookies, extensions, and bookmarks.
+
+2. Reusing Open Tabs Without Opening New Ones:
+   - HackFill inspects your open tabs. If you already have the hackathon registration
+     page open in one of your tabs, HackFill brings that exact tab to the front
+     and fills it without opening any new tab!
+
+3. Automatic Port Activation (`auto_restart_browser_with_debugging = True`):
+   - If Brave was opened from the desktop without `--remote-debugging-port=9222`,
+     HackFill detects it, restarts Brave with `--remote-debugging-port=9222 --restore-last-session`,
+     which restores ALL your open tabs and login sessions within 1-2 seconds, and connects!
+   - You can also click "Enable Automation Port on Running Brave Now" in Settings.
+
+4. One-Click Launcher (`launch_brave_for_hackfill.bat`):
+   - We included a batch file `launch_brave_for_hackfill.bat` in the project folder.
+   - When you launch Brave using this shortcut, Brave always runs with port 9222
+     active, so HackFill can connect to it instantly anytime with ZERO new windows.
+
+5. Safe Detach:
+   - When automation finishes or stops, HackFill only detaches from the session.
+   - It NEVER closes your browser or terminates your tabs.
 ================================================================================

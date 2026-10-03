@@ -22,6 +22,7 @@ HackFill is built with an **offline-first matching engine** (strict canonical al
 ## 🚀 Features
 
 - **Auto-Pilot (Zero-Click Mode)**: Hands-free execution that traverses multi-step pages, automatically clicks and accepts checkboxes (Terms of Service, Rules, Code of Conduct), and uses smart profile fallbacks for unmapped questions.
+- **Attach to Already-Open Browser (Zero New Instances)**: Connects directly via Chrome DevTools Protocol (CDP) to your already running Brave or Chrome browser. Re-uses open tabs, preserves active logins and cookies, and avoids opening duplicate windows.
 - **Multi-Browser Automation**: Native support for **Brave Browser** (auto-detected), Chromium, Google Chrome, and Microsoft Edge. Watch every field populate in real time.
 - **Intelligent Field Matching**:
   - Exact key matching (`name`, `email`, `phone`, `college`)

@@ -46,3 +46,19 @@ def test_brave_launch_and_navigate():
 
     manager.close()
     assert not manager.is_alive()
+
+
+def test_is_browser_running_detection():
+    from app.automation.browser import is_browser_running
+    # Brave is running on this Windows system
+    running = is_browser_running("Brave")
+    assert isinstance(running, bool)
+    # A non-existent fake browser name should return False
+    assert not is_browser_running("non_existent_fake_browser_xyz")
+
+
+def test_is_cdp_port_active_check():
+    from app.automation.browser import is_cdp_port_active
+    # Port 59999 should not be active
+    assert not is_cdp_port_active(59999)
+

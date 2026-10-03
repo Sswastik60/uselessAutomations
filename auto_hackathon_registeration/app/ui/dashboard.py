@@ -132,6 +132,25 @@ class DashboardView(QWidget):
         autopilot_row.addWidget(self.autopilot_badge)
         card_layout.addLayout(autopilot_row)
 
+        # Existing Browser Attachment Row
+        existing_browser_row = QHBoxLayout()
+        existing_browser_row.setSpacing(10)
+        self.cb_use_open_browser = QCheckBox("Use Already-Open Browser (Zero new windows, preserves logins)")
+        self.cb_use_open_browser.setChecked(self.settings_manager.settings.connect_to_existing_browser)
+        self.cb_use_open_browser.setFont(QFont("-apple-system", 10, QFont.DemiBold))
+        self.cb_use_open_browser.setStyleSheet(f"color: {COLOR_TEXT_WHITE};")
+        self.cb_use_open_browser.toggled.connect(self._on_browser_attachment_toggled)
+
+        self.browser_mode_badge = BadgeLabel(
+            "OPEN BROWSER" if self.settings_manager.settings.connect_to_existing_browser else "NEW WINDOW",
+            "SUCCESS" if self.settings_manager.settings.connect_to_existing_browser else "INFO"
+        )
+        self.browser_mode_badge.setFixedHeight(26)
+        existing_browser_row.addWidget(self.cb_use_open_browser)
+        existing_browser_row.addStretch()
+        existing_browser_row.addWidget(self.browser_mode_badge)
+        card_layout.addLayout(existing_browser_row)
+
         # Start Automation Button
         self.btn_start = PrimaryButton("START AUTOMATION")
         self.btn_start.setFixedHeight(46)
@@ -278,6 +297,15 @@ class DashboardView(QWidget):
             self.autopilot_badge.set_level("SUCCESS", "ZERO-CLICK")
         else:
             self.autopilot_badge.set_level("WARNING", "MANUAL CONFIRM")
+
+    def _on_browser_attachment_toggled(self, checked: bool):
+        s = self.settings_manager.settings
+        s.connect_to_existing_browser = checked
+        self.settings_manager.save()
+        if checked:
+            self.browser_mode_badge.set_level("SUCCESS", "OPEN BROWSER")
+        else:
+            self.browser_mode_badge.set_level("INFO", "NEW WINDOW")
 
     def _on_start_clicked(self):
         url = self.url_input.text().strip()

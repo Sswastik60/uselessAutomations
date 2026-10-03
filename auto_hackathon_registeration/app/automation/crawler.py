@@ -28,7 +28,10 @@ class FormCrawler:
             browser_type=self.settings.browser,
             custom_executable_path=self.settings.custom_browser_path,
             visible=self.settings.browser_visible,
-            timeout_seconds=self.settings.timeout_seconds
+            timeout_seconds=self.settings.timeout_seconds,
+            connect_to_existing_browser=self.settings.connect_to_existing_browser,
+            cdp_port=self.settings.cdp_port,
+            auto_restart_browser_with_debugging=self.settings.auto_restart_browser_with_debugging
         )
         from ..utils.matching import FieldMatcherEngine
         engine = FieldMatcherEngine(

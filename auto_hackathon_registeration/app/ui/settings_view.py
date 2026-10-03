@@ -109,6 +109,38 @@ class SettingsView(QWidget):
         self.chk_visible.setChecked(True)
         b_layout.addWidget(self.chk_visible)
 
+        # CDP Attachment Controls
+        self.chk_connect_existing = QCheckBox("Attach to already-open browser (Zero new windows, preserves logins)")
+        self.chk_connect_existing.setChecked(True)
+        b_layout.addWidget(self.chk_connect_existing)
+
+        cdp_row = QHBoxLayout()
+        cdp_label = QLabel("Automation Port (CDP):")
+        cdp_label.setFixedWidth(200)
+        self.spin_cdp_port = QSpinBox()
+        self.spin_cdp_port.setRange(1024, 65535)
+        self.spin_cdp_port.setValue(9222)
+        self.spin_cdp_port.setFixedHeight(34)
+        cdp_row.addWidget(cdp_label)
+        cdp_row.addWidget(self.spin_cdp_port, stretch=1)
+        b_layout.addLayout(cdp_row)
+
+        self.chk_auto_restart_debug = QCheckBox("Automatically enable automation port on running browser (restores tabs & logins)")
+        self.chk_auto_restart_debug.setChecked(True)
+        b_layout.addWidget(self.chk_auto_restart_debug)
+
+        # 1-Click Port Activation Button Row
+        activate_row = QHBoxLayout()
+        self.btn_activate_port = SecondaryButton("Enable Automation Port on Running Brave Now")
+        self.btn_activate_port.setFixedHeight(34)
+        self.btn_activate_port.clicked.connect(self._activate_port_now)
+        self.port_status_badge = BadgeLabel("CDP PORT", "INFO")
+        self.port_status_badge.setFixedHeight(28)
+        activate_row.addWidget(self.btn_activate_port)
+        activate_row.addWidget(self.port_status_badge)
+        activate_row.addStretch()
+        b_layout.addLayout(activate_row)
+
         layout.addWidget(browser_card)
 
         # 2. Limits & Timeouts Card
@@ -244,6 +276,29 @@ class SettingsView(QWidget):
             self.input_custom_path.setText(filepath)
             self._on_browser_changed()
 
+    def _activate_port_now(self):
+        from ..automation.browser import launch_or_restart_browser_with_debugging, is_cdp_port_active
+        b_type = self.combo_browser.currentData() or "Brave"
+        port = self.spin_cdp_port.value()
+        custom_p = self.input_custom_path.text().strip()
+
+        if is_cdp_port_active(port):
+            self.port_status_badge.set_level("SUCCESS", f"PORT {port} ACTIVE")
+            QMessageBox.information(self, "Port Ready", f"{b_type} is already running with automation port {port} active!")
+            return
+
+        ok, msg = launch_or_restart_browser_with_debugging(b_type, port, custom_p)
+        if ok:
+            self.port_status_badge.set_level("SUCCESS", f"PORT {port} ACTIVE")
+            QMessageBox.information(
+                self,
+                "Automation Port Enabled",
+                f"{b_type} is now running with automation port {port} active!\n\nAll your previous tabs and logins have been restored.\nHackFill can now control your open browser window directly."
+            )
+        else:
+            self.port_status_badge.set_level("ERROR", "PORT FAILED")
+            QMessageBox.warning(self, "Activation Failed", f"Could not enable automation port:\n{msg}")
+
     def load_settings(self):
         s = self.manager.settings
         # Find matching combo index
@@ -257,6 +312,9 @@ class SettingsView(QWidget):
         self.chk_visible.setChecked(s.browser_visible)
         self.spin_timeout.setValue(s.timeout_seconds)
         self.spin_max_pages.setValue(s.max_pages)
+        self.chk_connect_existing.setChecked(s.connect_to_existing_browser)
+        self.spin_cdp_port.setValue(s.cdp_port)
+        self.chk_auto_restart_debug.setChecked(s.auto_restart_browser_with_debugging)
         self.chk_autopilot.setChecked(s.auto_pilot_mode)
         self.chk_auto_checkboxes.setChecked(s.auto_check_checkboxes)
         self.chk_auto_advance.setChecked(s.auto_advance_pages)
@@ -275,6 +333,9 @@ class SettingsView(QWidget):
         s.browser_visible = self.chk_visible.isChecked()
         s.timeout_seconds = self.spin_timeout.value()
         s.max_pages = self.spin_max_pages.value()
+        s.connect_to_existing_browser = self.chk_connect_existing.isChecked()
+        s.cdp_port = self.spin_cdp_port.value()
+        s.auto_restart_browser_with_debugging = self.chk_auto_restart_debug.isChecked()
         s.auto_pilot_mode = self.chk_autopilot.isChecked()
         s.auto_check_checkboxes = self.chk_auto_checkboxes.isChecked()
         s.auto_advance_pages = self.chk_auto_advance.isChecked()
@@ -298,6 +359,9 @@ class SettingsView(QWidget):
         self.chk_visible.setChecked(default.browser_visible)
         self.spin_timeout.setValue(default.timeout_seconds)
         self.spin_max_pages.setValue(default.max_pages)
+        self.chk_connect_existing.setChecked(default.connect_to_existing_browser)
+        self.spin_cdp_port.setValue(default.cdp_port)
+        self.chk_auto_restart_debug.setChecked(default.auto_restart_browser_with_debugging)
         self.chk_autopilot.setChecked(default.auto_pilot_mode)
         self.chk_auto_checkboxes.setChecked(default.auto_check_checkboxes)
         self.chk_auto_advance.setChecked(default.auto_advance_pages)
