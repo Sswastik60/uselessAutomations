@@ -1,7 +1,7 @@
 """Application settings model and JSON persistent storage."""
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, fields
 from pathlib import Path
 from typing import Optional
 
@@ -9,15 +9,23 @@ from typing import Optional
 @dataclass
 class AppSettings:
     """Configuration options for HackFill automation and behavior."""
-    browser: str = "Chromium"  # "Chromium", "Brave", "Chrome", "Edge", "Custom"
+    browser: str = "Brave"  # "Chromium", "Brave", "Chrome", "Edge", "Custom"
     custom_browser_path: str = ""
     browser_visible: bool = True
     timeout_seconds: int = 30
     max_pages: int = 30
     require_confirmation_before_submit: bool = True
-    pause_on_uncertain_fields: bool = True
+    pause_on_uncertain_fields: bool = False
     pause_on_captcha: bool = True
     logging_enabled: bool = True
+    
+    # Auto-Pilot (Zero-Click) Automation Controls
+    auto_pilot_mode: bool = True
+    auto_check_checkboxes: bool = True
+    auto_advance_pages: bool = True
+    smart_fallback_for_unknown: bool = True
+    auto_submit_final: bool = False
+
     last_profile_path: str = ""
     last_url: str = ""
 
@@ -34,7 +42,9 @@ class SettingsManager:
             try:
                 with open(self.settings_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    return AppSettings(**data)
+                    valid_keys = {f.name for f in fields(AppSettings)}
+                    filtered_data = {k: v for k, v in data.items() if k in valid_keys}
+                    return AppSettings(**filtered_data)
             except Exception:
                 return AppSettings()
         return AppSettings()

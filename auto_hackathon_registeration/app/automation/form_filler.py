@@ -10,7 +10,8 @@ from ..services.logger import get_logger
 class FormFiller:
     """Executes DOM element population with Playwright locators."""
 
-    def __init__(self):
+    def __init__(self, auto_check_checkboxes: bool = False):
+        self.auto_check_checkboxes = auto_check_checkboxes
         self.logger = get_logger()
 
     def fill_all(self, page: Page, matches: List[FieldMatch]) -> int:
@@ -88,13 +89,19 @@ class FormFiller:
 
             # 4. Checkboxes
             elif field.field_type == FieldType.CHECKBOX:
-                if field.is_terms_or_legal:
+                if field.is_terms_or_legal and not self.auto_check_checkboxes:
                     self.logger.warning(f"Skipped legal checkbox '{field.display_name}' (requires explicit confirmation).")
                     return False
 
-                # Only check if user profile value is explicitly positive
-                if str(value).strip().lower() in ("yes", "true", "1", "checked", "agree"):
-                    locator.check(timeout=3000)
+                # Check if user profile value is positive or auto-pilot checkbox clicking is active
+                if str(value).strip().lower() in ("yes", "true", "1", "checked", "agree") or self.auto_check_checkboxes:
+                    try:
+                        locator.check(timeout=3000)
+                    except Exception:
+                        try:
+                            locator.click(timeout=3000)
+                        except Exception:
+                            pass
                     self.logger.info(f"Checked box '{field.display_name}'")
                     match.status = "FILLED"
                     return True

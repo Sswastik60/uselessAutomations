@@ -129,8 +129,15 @@ class FieldMatcherEngine:
     CONFIDENCE_UNCERTAIN = 0.45
     AUTO_FILL_THRESHOLD = 0.70  # Fields with confidence >= 0.70 are safe to auto-fill
 
-    def __init__(self, custom_aliases: Optional[Dict[str, List[str]]] = None):
+    def __init__(
+        self,
+        custom_aliases: Optional[Dict[str, List[str]]] = None,
+        auto_check_checkboxes: bool = False,
+        smart_fallback_for_unknown: bool = False
+    ):
         self.aliases: Dict[str, List[str]] = dict(CANONICAL_ALIASES)
+        self.auto_check_checkboxes = auto_check_checkboxes
+        self.smart_fallback_for_unknown = smart_fallback_for_unknown
         if custom_aliases:
             for key, val in custom_aliases.items():
                 if key in self.aliases:
@@ -143,19 +150,30 @@ class FieldMatcherEngine:
         Evaluate a single FormField against a UserProfile to determine the best match
         and compute its confidence score.
         """
-        # Flag legal agreements, terms of service, declarations
-        legal_keywords = {"terms", "condition", "conduct", "agree", "declaration", "policy", "privacy", "consent"}
-        field_context = field.identifier_context.lower()
-        if any(kw in field_context for kw in legal_keywords) and field.field_type == FieldType.CHECKBOX:
-            field.is_terms_or_legal = True
-            return FieldMatch(
-                field=field,
-                matched_key=None,
-                matched_value=None,
-                confidence=0.0,
-                match_reason="Legal agreement / declaration requires explicit user confirmation",
-                status="MANUAL_REQUIRED"
-            )
+        # Checkbox handling (including Terms of Service, Agreements, and Preferences)
+        if field.field_type == FieldType.CHECKBOX:
+            legal_keywords = {"terms", "condition", "conduct", "agree", "declaration", "policy", "privacy", "consent"}
+            field_context = field.identifier_context.lower()
+            field.is_terms_or_legal = any(kw in field_context for kw in legal_keywords)
+
+            if self.auto_check_checkboxes:
+                return FieldMatch(
+                    field=field,
+                    matched_key="auto_checked_checkbox",
+                    matched_value="yes",
+                    confidence=1.0,
+                    match_reason="Auto-Pilot: Automatically checked agreement/preference",
+                    status="FILLED"
+                )
+            elif field.is_terms_or_legal:
+                return FieldMatch(
+                    field=field,
+                    matched_key=None,
+                    matched_value=None,
+                    confidence=0.0,
+                    match_reason="Legal agreement / declaration requires explicit user confirmation",
+                    status="MANUAL_REQUIRED"
+                )
 
         best_key: Optional[str] = None
         best_confidence = 0.0
@@ -229,14 +247,48 @@ class FieldMatcherEngine:
 
         # Determine matched value and status
         matched_value = profile.get(best_key) if best_key else None
-        status = "UNRESOLVED"
-
         if best_confidence >= self.AUTO_FILL_THRESHOLD and matched_value:
             status = "FILLED"
         elif best_confidence >= self.CONFIDENCE_UNCERTAIN and matched_value:
             status = "PENDING_CONFIRMATION"
         else:
             status = "UNRESOLVED"
+
+        # Smart Fallback for Auto-Pilot Mode on unresolved fields
+        if status == "UNRESOLVED" and self.smart_fallback_for_unknown:
+            if field.field_type == FieldType.TEXTAREA:
+                matched_value = profile.get("why_participate") or profile.get("project_idea") or "Passionate developer eager to build practical solutions, learn from the community, and collaborate with like-minded peers."
+                status = "FILLED"
+                best_confidence = 0.80
+                best_reason = "Auto-Pilot: Profile-derived essay fallback"
+            elif field.field_type == FieldType.SELECT and field.options:
+                valid_opts = [
+                    opt.text or opt.value for opt in field.options
+                    if (opt.text or opt.value) and not any(kw in (opt.text or "").lower() for kw in ("select", "choose", "none", "please"))
+                ]
+                matched_value = valid_opts[0] if valid_opts else (field.options[0].text or field.options[0].value)
+                status = "FILLED"
+                best_confidence = 0.75
+                best_reason = "Auto-Pilot: Default option selection"
+            elif field.field_type == FieldType.RADIO:
+                matched_value = "Yes"
+                status = "FILLED"
+                best_confidence = 0.75
+                best_reason = "Auto-Pilot: Positive radio selection"
+            elif field.field_type in (FieldType.TEXT, FieldType.EMAIL, FieldType.TEL, FieldType.NUMBER, FieldType.URL):
+                if field.field_type == FieldType.EMAIL:
+                    matched_value = profile.email or "participant@example.com"
+                elif field.field_type == FieldType.TEL:
+                    matched_value = profile.get("phone") or "9876543210"
+                elif field.field_type == FieldType.NUMBER:
+                    matched_value = "1"
+                elif field.field_type == FieldType.URL:
+                    matched_value = profile.get("portfolio") or profile.get("github") or "https://github.com"
+                else:
+                    matched_value = profile.get("skills") or profile.get("name") or "N/A"
+                status = "FILLED"
+                best_confidence = 0.75
+                best_reason = "Auto-Pilot: Smart profile fallback"
 
         return FieldMatch(
             field=field,

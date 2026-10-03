@@ -268,4 +268,46 @@ To build a standalone Windows executable (`HackFill.exe`):
 1. Run `build.bat` in the project root.
 2. PyInstaller packages the PySide6 app, profiles, and test pages into `dist/HackFill/`.
 3. Target executable: `dist/HackFill/HackFill.exe`.
+
+
+================================================================================
+7. AUTO-PILOT (ZERO-CLICK) AUTOMATION & AUTO-CHECKBOX TRAVERSAL
+================================================================================
+QUESTION:
+"Is it possible to make it traverse everything, click check boxes automatically
+so that I have to do nothing, and it will fill on its own and traverse websites?"
+
+ANSWER:
+YES, ABSOLUTELY! HackFill features full Auto-Pilot (Zero-Click) mode that
+allows complete hands-free execution across multi-step registration forms:
+
+HOW IT WORKS UNDER THE HOOD:
+1. Automatic Checkbox Acceptance (`auto_check_checkboxes = True`):
+   - The engine automatically identifies all checkboxes: Terms and Conditions,
+     Rules, Codes of Conduct, Declarations, Liability Waivers, and Newsletters.
+   - It executes `locator.check(timeout=3000)`. If a custom web design hides the
+     native input behind a custom label or CSS overlay, it falls back to direct
+     `locator.click(timeout=3000)`, ensuring 100% of required checkboxes are checked.
+
+2. Autonomous Multi-Page Traversal (`auto_advance_pages = True`):
+   - For multi-step registration forms (e.g. Step 1: Personal Info -> Step 2: Team
+     -> Step 3: Essays -> Step 4: Submission), HackFill scans for forward buttons
+     (`Next`, `Continue`, `Proceed`, `Save & Continue`).
+   - After filling each step, it clicks `Next`, waits for DOM state changes, records
+     a unique visible DOM signature to prevent infinite loops, and automatically
+     fills the next step without requiring any mouse clicks from you.
+
+3. Smart Fallbacks for Unknown Questions (`smart_fallback_for_unknown = True`):
+   - If a hackathon asks an unusual or unmapped question (e.g. "What editor do you use?",
+     "Describe your dream hack"), instead of pausing and blocking your workflow:
+     * Textareas: Automatically populated with your profile essays (`why_participate` / `project_idea`).
+     * Dropdowns: Selects the first valid option.
+     * Radios: Automatically selects positive affirmations ("Yes").
+     * Text fields: Automatically populated with relevant profile info (name, skills, or portfolio).
+
+4. Zero-Click Final Submission (`auto_submit_final = True`):
+   - By default, HackFill stops at a 1-click Review Screen where everything is green
+     and checked, allowing you 1 click to submit.
+   - If you toggle `auto_submit_final: true` in Settings, HackFill clicks the final
+     submit button automatically for true zero-click, hands-free automation!
 ================================================================================

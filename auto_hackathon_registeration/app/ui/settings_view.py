@@ -146,7 +146,35 @@ class SettingsView(QWidget):
 
         layout.addWidget(limits_card)
 
-        # 3. Safety & Automation Behavior Card
+        # 3. Auto-Pilot (Zero-Click Automation) Card
+        autopilot_card = CardFrame()
+        ap_layout = QVBoxLayout(autopilot_card)
+        ap_layout.setContentsMargins(20, 18, 20, 18)
+        ap_layout.setSpacing(12)
+
+        ap_title = QLabel("AUTO-PILOT (ZERO-CLICK AUTOMATION)")
+        ap_title.setFont(QFont("-apple-system", 10, QFont.Bold))
+        ap_title.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; letter-spacing: 0.5px;")
+        ap_layout.addWidget(ap_title)
+
+        self.chk_autopilot = QCheckBox("Enable Master Auto-Pilot Mode (Hands-free execution)")
+        ap_layout.addWidget(self.chk_autopilot)
+
+        self.chk_auto_checkboxes = QCheckBox("Automatically accept and check checkboxes (Terms, Rules, Consents)")
+        ap_layout.addWidget(self.chk_auto_checkboxes)
+
+        self.chk_auto_advance = QCheckBox("Automatically traverse multi-page registration steps and continue")
+        ap_layout.addWidget(self.chk_auto_advance)
+
+        self.chk_smart_fallback = QCheckBox("Automatically fill unmapped questions using smart profile fallbacks")
+        ap_layout.addWidget(self.chk_smart_fallback)
+
+        self.chk_auto_submit = QCheckBox("Automatically click Final Submit button (Complete hands-free registration)")
+        ap_layout.addWidget(self.chk_auto_submit)
+
+        layout.addWidget(autopilot_card)
+
+        # 4. Safety & Automation Behavior Card
         safety_card = CardFrame()
         s_layout = QVBoxLayout(safety_card)
         s_layout.setContentsMargins(20, 18, 20, 18)
@@ -229,6 +257,11 @@ class SettingsView(QWidget):
         self.chk_visible.setChecked(s.browser_visible)
         self.spin_timeout.setValue(s.timeout_seconds)
         self.spin_max_pages.setValue(s.max_pages)
+        self.chk_autopilot.setChecked(s.auto_pilot_mode)
+        self.chk_auto_checkboxes.setChecked(s.auto_check_checkboxes)
+        self.chk_auto_advance.setChecked(s.auto_advance_pages)
+        self.chk_smart_fallback.setChecked(s.smart_fallback_for_unknown)
+        self.chk_auto_submit.setChecked(s.auto_submit_final)
         self.chk_confirm_submit.setChecked(s.require_confirmation_before_submit)
         self.chk_pause_uncertain.setChecked(s.pause_on_uncertain_fields)
         self.chk_pause_captcha.setChecked(s.pause_on_captcha)
@@ -242,6 +275,11 @@ class SettingsView(QWidget):
         s.browser_visible = self.chk_visible.isChecked()
         s.timeout_seconds = self.spin_timeout.value()
         s.max_pages = self.spin_max_pages.value()
+        s.auto_pilot_mode = self.chk_autopilot.isChecked()
+        s.auto_check_checkboxes = self.chk_auto_checkboxes.isChecked()
+        s.auto_advance_pages = self.chk_auto_advance.isChecked()
+        s.smart_fallback_for_unknown = self.chk_smart_fallback.isChecked()
+        s.auto_submit_final = self.chk_auto_submit.isChecked()
         s.require_confirmation_before_submit = self.chk_confirm_submit.isChecked()
         s.pause_on_uncertain_fields = self.chk_pause_uncertain.isChecked()
         s.pause_on_captcha = self.chk_pause_captcha.isChecked()
@@ -260,6 +298,11 @@ class SettingsView(QWidget):
         self.chk_visible.setChecked(default.browser_visible)
         self.spin_timeout.setValue(default.timeout_seconds)
         self.spin_max_pages.setValue(default.max_pages)
+        self.chk_autopilot.setChecked(default.auto_pilot_mode)
+        self.chk_auto_checkboxes.setChecked(default.auto_check_checkboxes)
+        self.chk_auto_advance.setChecked(default.auto_advance_pages)
+        self.chk_smart_fallback.setChecked(default.smart_fallback_for_unknown)
+        self.chk_auto_submit.setChecked(default.auto_submit_final)
         self.chk_confirm_submit.setChecked(default.require_confirmation_before_submit)
         self.chk_pause_uncertain.setChecked(default.pause_on_uncertain_fields)
         self.chk_pause_captcha.setChecked(default.pause_on_captcha)

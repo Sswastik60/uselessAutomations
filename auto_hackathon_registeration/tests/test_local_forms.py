@@ -216,3 +216,50 @@ def test_crawler_stop_request():
     assert crawler.status == AutomationStatus.STOPPED
     assert crawler._stop_requested.is_set()
 
+
+def test_autopilot_mode_checks_all_checkboxes(browser_context, test_profile):
+    from app.utils.matching import FieldMatcherEngine
+    page = browser_context
+    url = Path("test_pages/checkbox_form.html").absolute().as_uri()
+    page.goto(url)
+
+    detector = FormDetector()
+    scan_res = detector.scan_page(page)
+
+    # In Auto-Pilot mode, both legal agreements and regular checkboxes are automatically approved
+    engine = FieldMatcherEngine(auto_check_checkboxes=True)
+    matcher = AutomationFieldMatcher(engine=engine)
+    matches = matcher.process_scan(scan_res, test_profile)
+
+    filler = FormFiller(auto_check_checkboxes=True)
+    filled_count = filler.fill_all(page, matches)
+
+    assert filled_count >= 2
+    assert page.input_value("#applicant_name") == "Swastik"
+    assert page.is_checked("#code_of_conduct")
+    assert page.is_checked("#newsletter")
+
+
+def test_autopilot_smart_fallbacks(browser_context, test_profile):
+    from app.utils.matching import FieldMatcherEngine
+    page = browser_context
+    url = Path("test_pages/custom_questions.html").absolute().as_uri()
+    page.goto(url)
+
+    detector = FormDetector()
+    scan_res = detector.scan_page(page)
+
+    # In Auto-Pilot mode, unmapped custom questions receive smart profile-derived answers
+    engine = FieldMatcherEngine(smart_fallback_for_unknown=True)
+    matcher = AutomationFieldMatcher(engine=engine)
+    matches = matcher.process_scan(scan_res, test_profile)
+
+    filler = FormFiller()
+    filler.fill_all(page, matches)
+
+    assert "build practical applications" in page.input_value("#why_participate_input")
+    assert "Autonomous hackathon" in page.input_value("#project_idea_input")
+    # Smart fallback filled the unmapped question automatically
+    assert page.input_value("#custom_secret_question") != ""
+
+

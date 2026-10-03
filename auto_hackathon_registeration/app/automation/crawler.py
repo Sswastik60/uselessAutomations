@@ -2,7 +2,7 @@
 
 import threading
 import time
-from typing import Callable, Optional, List, Dict
+from typing import Callable, Optional, List, Dict, Tuple
 from playwright.sync_api import Error as PlaywrightError
 from .browser import BrowserManager
 from .form_detector import FormDetector
@@ -30,9 +30,14 @@ class FormCrawler:
             visible=self.settings.browser_visible,
             timeout_seconds=self.settings.timeout_seconds
         )
+        from ..utils.matching import FieldMatcherEngine
+        engine = FieldMatcherEngine(
+            auto_check_checkboxes=self.settings.auto_check_checkboxes,
+            smart_fallback_for_unknown=self.settings.smart_fallback_for_unknown
+        )
         self.detector = FormDetector()
-        self.matcher = AutomationFieldMatcher()
-        self.filler = FormFiller()
+        self.matcher = AutomationFieldMatcher(engine=engine)
+        self.filler = FormFiller(auto_check_checkboxes=self.settings.auto_check_checkboxes)
         self.navigator = MultiPageNavigator(max_pages=self.settings.max_pages)
 
         # Thread synchronization
@@ -167,7 +172,7 @@ class FormCrawler:
                     self.on_progress_updated(total_filled, total_discovered)
 
                 # 7. Check Multi-Page Progression
-                if self.navigator.can_advance(scan_res):
+                if self.settings.auto_advance_pages and self.navigator.can_advance(scan_res):
                     adv_ok = self.navigator.advance(page, scan_res)
                     if adv_ok:
                         continue  # Continue loop for next step
@@ -181,10 +186,16 @@ class FormCrawler:
                 self._cleanup()
                 return
 
-            # 8. Mandatory Pre-Submission Review Screen
-            self._update_status(AutomationStatus.WAITING_REVIEW, "Form filling completed. Review required.")
-            if self.on_review_required and self.last_scan_result:
-                self.on_review_required(self.cumulative_matches, self.last_scan_result)
+            # 8. Mandatory Pre-Submission Review Screen or Auto-Submit
+            if self.settings.auto_submit_final:
+                self._update_status(AutomationStatus.SUBMITTING, "Auto-Pilot: Submitting final registration...")
+                success, msg = self.submit_final_form()
+                if self.on_completed:
+                    self.on_completed(success, msg)
+            else:
+                self._update_status(AutomationStatus.WAITING_REVIEW, "Form filling completed. Review required.")
+                if self.on_review_required and self.last_scan_result:
+                    self.on_review_required(self.cumulative_matches, self.last_scan_result)
 
         except Exception as e:
             err_msg = f"Unexpected automation error: {str(e)}"

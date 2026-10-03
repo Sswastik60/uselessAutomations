@@ -149,7 +149,7 @@ class MainWindow(QMainWindow):
 
         # 2. Main Stacked Views
         self.stack = QStackedWidget()
-        self.dashboard_view = DashboardView()
+        self.dashboard_view = DashboardView(self.settings_manager)
         self.automation_view = AutomationView()
         self.review_view = ReviewView()
         self.profile_view = ProfileView()

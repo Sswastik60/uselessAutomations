@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, List
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog
+    QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog, QCheckBox
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
@@ -15,6 +15,7 @@ from .components import (
 )
 from ..utils.helpers import validate_url
 from ..services.logger import ActivityLogger, LogEntry, get_logger
+from ..services.settings import SettingsManager
 
 
 class DashboardView(QWidget):
@@ -23,8 +24,9 @@ class DashboardView(QWidget):
     start_automation_requested = Signal(str, str)  # (url, profile_path)
     view_profile_requested = Signal(str)           # (profile_path)
 
-    def __init__(self, parent=None):
+    def __init__(self, settings_manager: Optional[SettingsManager] = None, parent=None):
         super().__init__(parent)
+        self.settings_manager = settings_manager or SettingsManager()
         self.logger = get_logger()
         self.selected_profile_path: str = ""
         self._init_ui()
@@ -110,6 +112,25 @@ class DashboardView(QWidget):
         profile_section.addWidget(profile_label)
         profile_section.addLayout(profile_row)
         card_layout.addLayout(profile_section)
+
+        # Auto-Pilot Mode Switch Row
+        autopilot_row = QHBoxLayout()
+        autopilot_row.setSpacing(10)
+        self.cb_autopilot = QCheckBox("Auto-Pilot Mode (Zero-Click Traversal & Auto-Check)")
+        self.cb_autopilot.setChecked(self.settings_manager.settings.auto_pilot_mode)
+        self.cb_autopilot.setFont(QFont("-apple-system", 10, QFont.DemiBold))
+        self.cb_autopilot.setStyleSheet(f"color: {COLOR_TEXT_WHITE};")
+        self.cb_autopilot.toggled.connect(self._on_autopilot_toggled)
+
+        self.autopilot_badge = BadgeLabel(
+            "ZERO-CLICK" if self.settings_manager.settings.auto_pilot_mode else "MANUAL CONFIRM",
+            "SUCCESS" if self.settings_manager.settings.auto_pilot_mode else "WARNING"
+        )
+        self.autopilot_badge.setFixedHeight(26)
+        autopilot_row.addWidget(self.cb_autopilot)
+        autopilot_row.addStretch()
+        autopilot_row.addWidget(self.autopilot_badge)
+        card_layout.addLayout(autopilot_row)
 
         # Start Automation Button
         self.btn_start = PrimaryButton("START AUTOMATION")
@@ -244,6 +265,19 @@ class DashboardView(QWidget):
     def _on_view_profile(self):
         if self.selected_profile_path:
             self.view_profile_requested.emit(self.selected_profile_path)
+
+    def _on_autopilot_toggled(self, checked: bool):
+        s = self.settings_manager.settings
+        s.auto_pilot_mode = checked
+        s.auto_check_checkboxes = checked
+        s.auto_advance_pages = checked
+        s.smart_fallback_for_unknown = checked
+        s.pause_on_uncertain_fields = not checked
+        self.settings_manager.save()
+        if checked:
+            self.autopilot_badge.set_level("SUCCESS", "ZERO-CLICK")
+        else:
+            self.autopilot_badge.set_level("WARNING", "MANUAL CONFIRM")
 
     def _on_start_clicked(self):
         url = self.url_input.text().strip()
